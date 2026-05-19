@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>StudyFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ══ MODALS ═══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="modal-login" onclick="closeModalOutside(event,'modal-login')">
+  <div class="modal modal-sm">
+    <h2>👋 Willkommen zurück</h2><p class="modal-sub">Melde dich an um weiterzumachen</p>
+    <div class="fg"><label class="flbl">Benutzername</label><input class="fi" id="login-user" type="text" placeholder="admin" autocomplete="username"></div>
+    <div class="fg"><label class="flbl">Passwort</label><input class="fi" id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div id="login-err" class="ferr" style="display:none"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="doLogin()">Anmelden</button>
+      <button class="btn btn-s" onclick="closeModal('login');openModal('register')">Registrieren</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-register" onclick="closeModalOutside(event,'modal-register')">
+  <div class="modal modal-sm">
+    <h2>🎉 Konto erstellen</h2><p class="modal-sub">Kostenlos registrieren und loslegen</p>
+    <div class="fg"><label class="flbl">Benutzername *</label><input class="fi" id="reg-user" type="text" placeholder="Dein Benutzername"></div>
+    <div class="fg"><label class="flbl">E-Mail (optional)</label><input class="fi" id="reg-email" type="email" placeholder="name@beispiel.ch"></div>
+    <div class="fg"><label class="flbl">Passwort *</label><input class="fi" id="reg-pw" type="password" placeholder="Min. 6 Zeichen"></div>
+    <div id="reg-err" class="ferr" style="display:none"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="doRegister()">Konto erstellen</button>
+      <button class="btn btn-s" onclick="closeModal('register');openModal('login')">Anmelden</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-note" onclick="closeModalOutside(event,'modal-note')">
+  <div class="modal">
+    <h2 id="modal-note-title">📝 Note hinzufügen</h2><p class="modal-sub">Trage eine Note in dein Fach ein</p>
+    <input type="hidden" id="note-edit-id">
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="note-fach"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Note</label><input class="fi" id="note-val" type="number" min="1" max="6" step="0.25" placeholder="5.5"></div>
+      <div class="fg"><label class="flbl">Semester</label>
+        <select class="fi" id="note-sem">
+          <option value="1">Semester 1</option><option value="2">Semester 2</option>
+          <option value="3">Semester 3</option><option value="4">Semester 4</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">Titel / Thema</label><input class="fi" id="note-titel" type="text" placeholder="z.B. Prüfung Vektoren"></div>
+    <div class="fg"><label class="flbl">Datum</label><input class="fi" id="note-datum" type="date"></div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveNote()">Speichern</button><button class="btn btn-s" onclick="closeModal('note')">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-lernen" onclick="closeModalOutside(event,'modal-lernen')">
+  <div class="modal modal-lg">
+    <h2 id="lernen-modal-title">📚 Lerneintrag</h2><p class="modal-sub">Füge eine Lerneinheit hinzu</p>
+    <input type="hidden" id="lernen-edit-id">
+    <div class="frow">
+      <div class="fg"><label class="flbl">Fach *</label><select class="fi" id="lernen-fach" onchange="loadThemenLernen()"></select></div>
+      <div class="fg"><label class="flbl">Methode</label><select class="fi" id="lernen-methode"></select></div>
+    </div>
+    <div class="fg"><label class="flbl">Thema wählen</label>
+      <select class="fi" id="lernen-thema-sel" onchange="applyThemaLernen()"><option value="">— Thema auswählen —</option></select>
+    </div>
+    <div class="fg"><label class="flbl">Titel *</label><input class="fi" id="lernen-titel" type="text" placeholder="Was hast du gemacht?"></div>
+    <div class="fg"><label class="flbl">Beschreibung</label><textarea class="fi" id="lernen-desc" placeholder="Optionale Notizen..."></textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Dauer (Min) *</label><input class="fi" id="lernen-dauer" type="number" min="1" placeholder="45"></div>
+      <div class="fg"><label class="flbl">Datum</label><input class="fi" id="lernen-datum" type="date"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveLerneintrag()">Speichern</button><button class="btn btn-s" onclick="closeModal('lernen')">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-themen" onclick="closeModalOutside(event,'modal-themen')">
+  <div class="modal">
+    <h2>📋 Themen verwalten</h2><p class="modal-sub">Themen pro Fach hinzufügen und verwalten</p>
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="thema-fach" onchange="renderThemenList()"></select></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input class="fi" id="thema-name" placeholder="Neues Thema..." style="flex:1" onkeydown="if(event.key==='Enter')addThema()">
+      <button class="btn btn-p btn-sm" onclick="addThema()">+ Hinzufügen</button>
+    </div>
+    <div id="themen-list" style="max-height:260px;overflow-y:auto"></div>
+    <button class="btn btn-s" style="width:100%;margin-top:14px" onclick="closeModal('themen')">Schliessen</button>
+  </div>
+</div>
+
+<div class="overlay" id="modal-fach" onclick="closeModalOutside(event,'modal-fach')">
+  <div class="modal modal-sm">
+    <h2>🎓 Fach hinzufügen</h2><p class="modal-sub">Neues Schulfach erstellen</p>
+    <div class="fg"><label class="flbl">Fachname</label><input class="fi" id="new-fach-name" type="text" placeholder="z.B. Chemie" onkeydown="if(event.key==='Enter')saveFach()"></div>
+    <div class="fg"><label class="flbl">Farbe</label><div class="cdots" id="fach-cdots"></div></div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveFach()">Hinzufügen</button><button class="btn btn-s" onclick="closeModal('fach')">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-methode" onclick="closeModalOutside(event,'modal-methode')">
+  <div class="modal modal-lg">
+    <h2>⚡ Eigene Methode</h2><p class="modal-sub">Füge deine persönliche Lernmethode hinzu</p>
+    <div class="fg"><label class="flbl">Name</label><input class="fi" id="m-name" type="text" placeholder="z.B. Visualisierung"></div>
+    <div class="fg">
+      <label class="flbl">Icon auswählen</label>
+      <div id="m-icon-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:4px"></div>
+      <input type="hidden" id="m-icon" value="💡">
+    </div>
+    <div class="fg"><label class="flbl">Beschreibung</label><textarea class="fi" id="m-desc" placeholder="Wie funktioniert diese Methode?"></textarea></div>
+    <div class="fg"><label class="flbl">Empfehlung (Fächer)</label><input class="fi" id="m-empf" type="text" placeholder="z.B. Biologie, Geschichte"></div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveMethode()">Speichern</button><button class="btn btn-s" onclick="closeModal('methode')">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-event" onclick="closeModalOutside(event,'modal-event')">
+  <div class="modal">
+    <h2>📅 Termin planen</h2><p class="modal-sub">Plane eine Lerneinheit im Kalender</p>
+    <div class="fg"><label class="flbl">Titel</label><input class="fi" id="event-titel" placeholder="z.B. Mathe lernen" onkeydown="if(event.key==='Enter')saveEvent()"></div>
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="event-fach"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Datum</label><input class="fi" id="event-datum" type="date"></div>
+      <div class="fg"><label class="flbl">Uhrzeit</label><input class="fi" id="event-start" type="time"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveEvent()">Planen</button><button class="btn btn-s" onclick="closeModal('event')">Abbrechen</button></div>
+  </div>
+</div>
+
+<!-- Modal: Termin Detail / Löschen -->
+<div class="overlay" id="modal-event-detail" onclick="closeModalOutside(event,'modal-event-detail')">
+  <div class="modal modal-sm">
+    <h2 id="ev-detail-title">📅 Termin</h2>
+    <p class="modal-sub" id="ev-detail-info">–</p>
+    <div class="modal-foot">
+      <button class="btn btn-danger" onclick="delEventFromDetail()">🗑️ Löschen</button>
+      <button class="btn btn-s" onclick="closeModal('event-detail')">Schliessen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LANDING ════════════════════════════════════════════════════════════════ -->
+<div id="landing" style="display:flex">
+  <nav class="land-nav">
+    <div class="land-logo"><div class="logo-mark">📚</div>StudyFlow</div>
+    <div class="land-actions">
+      <button class="theme-btn" id="land-theme-btn" onclick="toggleTheme()">🌙</button>
+      <button class="btn btn-s btn-sm" onclick="openModal('login')">Anmelden</button>
+      <button class="btn btn-p btn-sm" onclick="openModal('register')">Registrieren</button>
+    </div>
+  </nav>
+  <div class="hero">
+    <div class="hero-eyebrow">✦ IDPA — Berufsmatura Lernplattform</div>
+    <h1>Lerne <em>smarter</em>,<br>nicht härter.</h1>
+    <p>Lernzeit tracken, Noten verwalten und Fortschritt mit coolen Grafiken sichtbar machen.</p>
+    <div class="hero-btns">
+      <button class="btn btn-p btn-lg" onclick="openModal('register')">Jetzt starten →</button>
+      <button class="btn btn-s btn-lg" onclick="openModal('login')">Ich hab schon ein Konto</button>
+    </div>
+    <div class="feat-strip">
+      <div class="feat-chip"><span>⏱️</span> Timer & Einträge</div>
+      <div class="feat-chip"><span>📊</span> 5 Diagramme</div>
+      <div class="feat-chip"><span>📅</span> Drag & Drop Kalender</div>
+      <div class="feat-chip"><span>📝</span> Noten & Durchschnitte</div>
+      <div class="feat-chip"><span>🌙</span> Dark Mode</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════════════════ -->
+<div id="app" style="display:none">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-logo"><div class="logo-mark">📚</div>StudyFlow</div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Haupt</div>
+        <a class="nav-item" id="nv-dashboard" onclick="showPage('dashboard')"><div class="nav-icon">🏠</div>Übersicht</a>
+        <a class="nav-item" id="nv-noten"     onclick="showPage('noten')"><div class="nav-icon">📝</div>Noten</a>
+        <a class="nav-item" id="nv-lernen"    onclick="showPage('lernen')"><div class="nav-icon">⏱️</div>Lernen</a>
+        <a class="nav-item" id="nv-kalender"  onclick="showPage('kalender')"><div class="nav-icon">📅</div>Planung</a>
+        <div class="nav-section-label">Analyse</div>
+        <a class="nav-item" id="nv-statistiken" onclick="showPage('statistiken')"><div class="nav-icon">📊</div>Statistiken</a>
+        <a class="nav-item" id="nv-methoden"    onclick="showPage('methoden')"><div class="nav-icon">⚡</div>Lernmethoden</a>
+        <div class="nav-section-label">Konto</div>
+        <a class="nav-item" id="nv-einstellungen" onclick="showPage('einstellungen')"><div class="nav-icon">⚙️</div>Einstellungen</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="user-av" id="sidebar-uav">A</div>
+          <div><div class="user-name" id="sidebar-uname">Benutzer</div><div class="user-sub">Eingeloggt</div></div>
+        </div>
+        <a class="nav-item" onclick="doLogout()" style="cursor:pointer"><div class="nav-icon">👋</div>Abmelden</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="burger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+        <h1 class="topbar-title" id="topbar-title">Übersicht</h1>
+      </div>
+      <div class="topbar-right" id="topbar-actions"></div>
+    </div>
+
+    <!-- ── DASHBOARD ── -->
+    <div class="page page-content" id="page-dashboard">
+      <div class="grid-4" id="dash-stats" style="margin-bottom:24px">
+        <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-label">Lernzeit diese Woche</div><div class="stat-val">0h</div><div class="stat-sub">0 Minuten total</div></div>
+        <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-label">Aktive Fächer</div><div class="stat-val">0</div><div class="stat-sub">Schuljahr 2025</div></div>
+        <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-label">Letzte Note</div><div class="stat-val">–</div><div class="stat-sub">Noch keine Noten</div></div>
+        <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-label">Gesamtdurchschnitt</div><div class="stat-val">–</div><div class="stat-sub">Über alle Fächer</div></div>
+      </div>
+      <div class="grid-2" style="margin-bottom:24px">
+        <div class="chart-card"><div class="chart-title">📚 Lernzeit pro Fach</div><div class="chart-sub">Gesamte Lernzeit in Stunden</div><div class="chart-wrap"><canvas id="ch-dash-fach"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">📊 Notendurchschnitte</div><div class="chart-sub">Alle Fächer im Überblick</div><div class="chart-wrap"><canvas id="ch-dash-noten"></canvas></div></div>
+      </div>
+      <div class="sec-head">
+        <div><div class="sec-title">Letzte Lerneinträge</div><div class="sec-sub">Deine letzten 5 Einträge</div></div>
+        <button class="btn btn-s btn-sm" onclick="showPage('lernen')">Alle anzeigen →</button>
+      </div>
+      <div id="dash-eintraege"></div>
+    </div>
+
+    <!-- ── NOTEN ── -->
+    <div class="page page-content" id="page-noten" style="display:none">
+      <div id="noten-list"></div>
+    </div>
+
+    <!-- ── LERNEN ── -->
+    <div class="page page-content" id="page-lernen" style="display:none">
+      <div class="grid-2" style="margin-bottom:28px">
+        <div>
+          <div class="sec-title" style="margin-bottom:14px">⏱️ Lern-Timer</div>
+          <div class="timer-card">
+            <div class="timer-lbl">Aktuelle Sitzung</div>
+            <div class="timer-ring-wrap">
+              <svg width="190" height="190" viewBox="0 0 190 190"><circle class="ring-bg" cx="95" cy="95" r="80" stroke-width="10"/><circle class="ring-fill" id="ring-fill" cx="95" cy="95" r="80" stroke-width="10" stroke-dasharray="502.65" stroke-dashoffset="502.65"/></svg>
+              <div class="timer-center"><div class="timer-time" id="timer-display">00:00:00</div><div class="timer-state" id="timer-state-lbl">Bereit</div></div>
+            </div>
+            <div class="timer-fach-lbl" id="timer-fach-lbl">Kein Fach gewählt</div>
+            <div class="timer-btns">
+              <button class="tbtn tbtn-start" id="timer-startstop" onclick="toggleTimer()">▶ Starten</button>
+              <button class="tbtn tbtn-save" onclick="saveTimerEntry()">💾 Speichern</button>
+              <button class="tbtn tbtn-reset" onclick="resetTimer()">↺ Reset</button>
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <div class="fg"><label class="flbl">Fach für Timer</label><select class="fi" id="timer-fach" onchange="updateTimerFachLabel()"></select></div>
+          </div>
+        </div>
+        <div>
+          <div class="sec-title" style="margin-bottom:14px">📝 Schnelleintrag</div>
+          <div class="card" style="padding:22px">
+            <div class="fg"><label class="flbl">Fach *</label><select class="fi" id="quick-fach" onchange="loadThemenQuick()"></select></div>
+            <div class="fg"><label class="flbl">Thema</label><select class="fi" id="quick-thema" onchange="applyThemaQuick()"><option value="">— Thema auswählen —</option></select></div>
+            <div class="fg"><label class="flbl">Titel *</label><input class="fi" id="quick-titel" placeholder="Was hast du gelernt?"></div>
+            <div class="frow">
+              <div class="fg"><label class="flbl">Minuten *</label><input class="fi" id="quick-dauer" type="number" min="1" placeholder="45"></div>
+              <div class="fg"><label class="flbl">Datum</label><input class="fi" id="quick-datum" type="date"></div>
+            </div>
+            <button class="btn btn-p" style="width:100%" onclick="quickSave()">✓ Eintrag speichern</button>
+          </div>
+        </div>
+      </div>
+      <div class="sec-head">
+        <div><div class="sec-title">Alle Lerneinträge</div><div class="sec-sub" id="lernen-count"></div></div>
+      </div>
+      <div id="lernen-list"></div>
+    </div>
+
+    <!-- ── KALENDER ── -->
+    <div class="page page-content" id="page-kalender" style="display:none">
+      <div class="cal-wrap">
+        <div class="cal-nav">
+          <div class="cal-nav-l">
+            <button class="btn btn-s btn-sm" style="padding:7px 10px" onclick="calPrev()">◀</button>
+            <button class="btn btn-s btn-sm" style="padding:7px 10px" onclick="calNext()">▶</button>
+            <button class="btn btn-s btn-sm" onclick="calToday()">Heute</button>
+          </div>
+          <div class="cal-title" id="cal-title">–</div>
+          <div class="cal-nav-r">
+            <div class="view-toggle">
+              <button class="view-btn active" id="vbtn-monat" onclick="setCalView('monat')">Monat</button>
+              <button class="view-btn" id="vbtn-woche" onclick="setCalView('woche')">Woche</button>
+            </div>
+          </div>
+        </div>
+        <div class="cal-head">
+          <div class="cal-dow">Mo</div><div class="cal-dow">Di</div><div class="cal-dow">Mi</div>
+          <div class="cal-dow">Do</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div><div class="cal-dow">So</div>
+        </div>
+        <div class="cal-body" id="cal-body"></div>
+      </div>
+      <div style="margin-top:24px">
+        <div class="sec-head"><div><div class="sec-title">📌 Kommende Termine</div><div class="sec-sub">Geplante Lerneinheiten</div></div></div>
+        <div id="upcoming-events"></div>
+      </div>
+    </div>
+
+    <!-- ── STATISTIKEN ── -->
+    <div class="page page-content" id="page-statistiken" style="display:none">
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="chart-card"><div class="chart-title">📚 Lernzeit pro Fach</div><div class="chart-sub">Gesamte Stunden je Fach</div><div class="chart-wrap chart-wrap-lg"><canvas id="ch-stat-fach"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">⚡ Lernzeit pro Methode</div><div class="chart-sub">Welche Methode nutzt du am meisten?</div><div class="chart-wrap"><canvas id="ch-stat-meth"></canvas></div></div>
+      </div>
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="chart-card"><div class="chart-title">📈 Note vs. Lernmethode</div><div class="chart-sub">Welche Methode bringt die besten Noten?</div><div class="chart-wrap"><canvas id="ch-note-meth"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">🗓️ Lernverlauf (30 Tage)</div><div class="chart-sub">Tägliche Lernminuten</div><div class="chart-wrap chart-wrap-lg"><canvas id="ch-verlauf"></canvas></div></div>
+      </div>
+      <div class="chart-card"><div class="chart-title">🎯 Lernzeit & Noten Radar</div><div class="chart-sub">Vergleich aller Fächer auf einen Blick</div><div class="chart-wrap chart-wrap-lg" style="max-width:520px;margin:0 auto"><canvas id="ch-radar"></canvas></div></div>
+    </div>
+
+    <!-- ── METHODEN ── -->
+    <div class="page page-content" id="page-methoden" style="display:none">
+      <div class="grid-auto" id="methoden-grid"></div>
+    </div>
+
+    <!-- ── EINSTELLUNGEN ── -->
+    <div class="page page-content" id="page-einstellungen" style="display:none">
+      <div class="settings-wrap">
+        <div class="settings-sec">
+          <div class="settings-sec-lbl">Profil</div>
+          <div class="settings-row">
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="position:relative">
+                <div id="profile-pic" style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;overflow:hidden;cursor:pointer;flex-shrink:0" onclick="document.getElementById('pic-input').click()">
+                  <span id="profile-initials">?</span>
+                  <img id="profile-img" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0" src="">
+                </div>
+                <input type="file" id="pic-input" accept="image/*" style="display:none" onchange="uploadProfilePic(event)">
+                <div style="position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;cursor:pointer;border:2px solid var(--surface)" onclick="document.getElementById('pic-input').click()">✎</div>
+              </div>
+              <div><div class="settings-lbl" id="settings-uname">–</div><div class="settings-sub">Klicke auf das Bild um es zu ändern</div></div>
+            </div>
+            <button class="btn btn-s btn-xs" onclick="removeProfilePic()">Entfernen</button>
+          </div>
+        </div>
+        <div class="settings-sec">
+          <div class="settings-sec-lbl">Darstellung</div>
+          <div class="settings-row">
+            <div><div class="settings-lbl">Dark Mode</div><div class="settings-sub">Dunkles Design aktivieren</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-dark" onchange="toggleTheme()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="settings-sec">
+          <div class="settings-sec-lbl">Fächer verwalten</div>
+          <div id="settings-faecher"></div>
+          <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="openAddFach()">+ Neues Fach hinzufügen</button>
+        </div>
+        <div class="settings-sec">
+          <div class="settings-sec-lbl">Themen verwalten</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <select class="fi" id="settings-thema-fach" onchange="renderSettingsThemen()" style="flex:1;padding:8px 12px"></select>
+          </div>
+          <div id="settings-themen" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px">
+            <input class="fi" id="settings-thema-new" placeholder="Neues Thema..." style="flex:1;padding:8px 12px" onkeydown="if(event.key==='Enter')settingsAddThema()">
+            <button class="btn btn-p btn-sm" onclick="settingsAddThema()">+ Hinzufügen</button>
+          </div>
+        </div>
+        <div class="settings-sec">
+          <div class="settings-sec-lbl">Konto</div>
+          <div class="settings-row">
+            <div><div class="settings-lbl">Abmelden</div><div class="settings-sub">Von diesem Gerät abmelden</div></div>
+            <button class="btn btn-danger btn-sm" onclick="doLogout()">Abmelden</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   StudyFlow v3 — Inline SPA JavaScript
+═══════════════════════════════════════════════════════ */
+
+const SF = {
+  user: null, faecher: [], noten: [], methoden: [],
+  eintraege: [], themen: [], kalender: [],
+  charts: {}, selColor: '#EF4444', curPage: 'dashboard',
+};
+
+const PAGE_TITLES = { dashboard:'Übersicht', noten:'Noten', lernen:'Lernen', kalender:'Planung', statistiken:'Statistiken', methoden:'Lernmethoden', einstellungen:'Einstellungen' };
+const PAGE_ACTIONS = {
+  noten: `<button class="btn btn-s btn-sm" onclick="openAddFach()">+ Fach</button><button class="btn btn-p btn-sm" onclick="openAddNote()">+ Note</button>`,
+  lernen: `<button class="btn btn-s btn-sm" onclick="openThemenModal()">📋 Themen</button><button class="btn btn-p btn-sm" onclick="openAddLernen()">+ Eintrag</button>`,
+  kalender: `<button class="btn btn-p btn-sm" onclick="openAddEvent()">+ Termin</button>`,
+  methoden: `<button class="btn btn-p btn-sm" onclick="openMethodeModal()">+ Eigene Methode</button>`,
+};
+
+/* ── API ──────────────────────────────────────────────── */
+async function api(method, path, data) {
+  const o = { method, credentials:'include', headers:{'Content-Type':'application/json'} };
+  if (data) o.body = JSON.stringify(data);
+  try { const r = await fetch('/api'+path, o); return r.json(); } catch { return {}; }
+}
+
+/* ── INIT ─────────────────────────────────────────────── */
+async function init() {
+  applyTheme();
+  buildColorDots();
+  document.getElementById('login-pw').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('reg-pw').addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+
+  const me = await api('GET', '/me');
+  if (!me.logged_in) {
+    showLanding();
+  } else {
+    SF.user = me;
+    setUserUI();
+    await loadAll();
+    showApp();
+    showPage('dashboard');
+  }
+}
+
+function showLanding() {
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+function showApp() {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+}
+function setUserUI() {
+  const u = SF.user?.username || '';
+  const savedPic = localStorage.getItem('sf-pic');
+  const av = document.getElementById('sidebar-uav');
+  if (av) { av.innerHTML = savedPic ? `<img src="${savedPic}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">` : u[0]?.toUpperCase() || '?'; }
+  const un = document.getElementById('sidebar-uname'); if(un) un.textContent = u;
+  const su = document.getElementById('settings-uname'); if(su) su.textContent = u;
+  const pi = document.getElementById('profile-initials'); if(pi) pi.textContent = u[0]?.toUpperCase() || '?';
+  const pimg = document.getElementById('profile-img');
+  if (pimg && savedPic) { pimg.src = savedPic; pimg.style.display = 'block'; if(pi) pi.style.display = 'none'; }
+  const td = document.getElementById('toggle-dark'); if(td) td.checked = localStorage.getItem('sf-dark')==='1';
+}
+
+async function loadAll() {
+  const [f,n,m,l,t,k] = await Promise.all([
+    api('GET','/faecher'), api('GET','/noten'), api('GET','/lernmethoden'),
+    api('GET','/lerneintraege'), api('GET','/themen'), api('GET','/kalender')
+  ]);
+  SF.faecher   = Array.isArray(f)?f:[];
+  SF.noten     = Array.isArray(n)?n:[];
+  SF.methoden  = Array.isArray(m)?m:[];
+  SF.eintraege = Array.isArray(l)?l:[];
+  SF.themen    = Array.isArray(t)?t:[];
+  SF.kalender  = Array.isArray(k)?k:[];
+  fillFachDrops(); fillMethodeDrops();
+  fillSettingsThemaFach();
+}
+
+/* ── LOGIN / REGISTER / LOGOUT ────────────────────────── */
+async function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-err');
+  if (!u||!p) { showErr(err,'Bitte beide Felder ausfüllen'); return; }
+  const r = await api('POST', '/login', {username:u, password:p});
+  if (r.success) {
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pw').value = '';
+    if(err) err.style.display='none';
+    SF.user = r;
+    setUserUI();
+    await loadAll();
+    closeModal('login');
+    showApp();
+    showPage('dashboard');
+    toast('👋 Willkommen zurück, '+u+'!', 'ok');
+  } else { showErr(err, r.message||'Login fehlgeschlagen'); }
+}
+
+async function doRegister() {
+  const u = document.getElementById('reg-user').value.trim();
+  const e = document.getElementById('reg-email').value.trim();
+  const p = document.getElementById('reg-pw').value;
+  const err = document.getElementById('reg-err');
+  if (!u||!p) { showErr(err,'Benutzername und Passwort erforderlich'); return; }
+  if (p.length<6) { showErr(err,'Passwort muss mind. 6 Zeichen haben'); return; }
+  const r = await api('POST', '/register', {username:u, email:e, password:p});
+  if (r.success) {
+    ['reg-user','reg-email','reg-pw'].forEach(id=>document.getElementById(id).value='');
+    if(err) err.style.display='none';
+    SF.user = r;
+    setUserUI();
+    await loadAll();
+    closeModal('register');
+    showApp();
+    showPage('dashboard');
+    toast('🎉 Willkommen, '+u+'! Deine Fächer sind bereit.', 'ok');
+  } else { showErr(err, r.message||'Registrierung fehlgeschlagen'); }
+}
+
+async function doLogout() {
+  await api('POST','/logout');
+  SF.user=null; SF.faecher=[]; SF.noten=[]; SF.methoden=[];
+  SF.eintraege=[]; SF.themen=[]; SF.kalender=[];
+  Object.values(SF.charts).forEach(c=>{try{c.destroy();}catch{}});
+  SF.charts={};
+  showLanding();
+}
+
+/* ── PAGE NAVIGATION ──────────────────────────────────── */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.style.display='none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-'+name);
+  if (pg) pg.style.display='block';
+  const nv = document.getElementById('nv-'+name);
+  if (nv) nv.classList.add('active');
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[name]||name;
+  const actions = document.getElementById('topbar-actions');
+  actions.innerHTML = (PAGE_ACTIONS[name]||'') + '<button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>';
+  applyTheme();
+  SF.curPage = name;
+  if (window.innerWidth<=900) closeSidebar();
+  const renders = {
+    dashboard: renderDashboard,
+    noten: renderNoten,
+    lernen: () => { renderLernen(); setTodayDates(); fillFachDrops(); fillMethodeDrops(); },
+    kalender: () => { renderKalender(); },
+    statistiken: renderStatistiken,
+    methoden: renderMethoden,
+    einstellungen: renderSettingsPage,
+  };
+  if (renders[name]) renders[name]();
+}
+
+/* ── THEME ────────────────────────────────────────────── */
+function applyTheme() {
+  const dark = localStorage.getItem('sf-dark')==='1';
+  document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+  document.querySelectorAll('.theme-btn').forEach(b=>b.textContent=dark?'☀️':'🌙');
+  const td = document.getElementById('toggle-dark'); if(td) td.checked=dark;
+}
+function toggleTheme() {
+  const dark = localStorage.getItem('sf-dark')==='1';
+  localStorage.setItem('sf-dark', dark?'0':'1');
+  applyTheme();
+  Object.values(SF.charts).forEach(c=>{try{c.destroy();}catch{}});
+  SF.charts={};
+  const renders={statistiken:renderStatistiken,dashboard:renderDashboard};
+  if(renders[SF.curPage]) renders[SF.curPage]();
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+
+/* ── MODAL ────────────────────────────────────────────── */
+function openModal(name) {
+  const el = document.getElementById('modal-'+name);
+  if (el) { el.classList.add('open'); setTimeout(()=>el.querySelector('input,select,textarea')?.focus(),100); }
+}
+function closeModal(name) {
+  const el = document.getElementById('modal-'+name); if(el) el.classList.remove('open');
+}
+function closeModalOutside(e, name) { if(e.target===document.getElementById('modal-'+name)) closeModal(name); }
+
+/* ── TOAST ────────────────────────────────────────────── */
+function toast(msg, type='ok') {
+  const w = document.getElementById('toast-wrap');
+  const t = document.createElement('div'); t.className='toast '+type; t.textContent=msg;
+  w.appendChild(t); setTimeout(()=>t.remove(),3200);
+}
+
+/* ── HELPERS ──────────────────────────────────────────── */
+function showErr(el,msg){if(el){el.style.display='block';el.textContent=msg;}}
+function fmtDate(d){if(!d)return'–';const p=d.split('-');return p[2]+'.'+p[1]+'.'+p[0];}
+function fmtMin(m){if(!m)return'0 Min.';if(m<60)return m+' Min.';return Math.floor(m/60)+'h '+(m%60?(m%60)+'m':'');}
+function getCS(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function setTodayDates(){const t=new Date().toISOString().split('T')[0];['note-datum','lernen-datum','quick-datum','event-datum'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=t;});}
+function destroyChart(id){if(SF.charts[id]){try{SF.charts[id].destroy();}catch{}delete SF.charts[id];}}
+function emptyHTML(icon,title,sub){return`<div class="empty"><div class="empty-icon">${icon}</div><h3>${title}</h3><p>${sub}</p></div>`;}
+
+function entryHTML(e, showActions) {
+  const fach = SF.faecher.find(f=>f.id===e.fach_id)||{};
+  const fname = e.fach_name||fach.name||'Unbekannt';
+  const ffarbe = e.fach_farbe||fach.farbe||'#999';
+  const meth = SF.methoden.find(m=>m.id===e.methode_id);
+  const actions = showActions?`<div class="entry-actions"><button class="btn-icon" onclick="openEditLernen(${e.id})">✏️</button><button class="btn-icon" onclick="delEintrag(${e.id})">🗑️</button></div>`:'';
+  return `<div class="entry-item"><div class="entry-dot" style="background:${ffarbe}"></div><div class="entry-info"><div class="entry-title">${e.titel}</div><div class="entry-meta">${fname} · ${fmtDate(e.datum)}${meth?' · '+meth.name:''}</div></div><div class="entry-dur">${fmtMin(e.dauer_minuten)}</div>${actions}</div>`;
+}
+
+/* ── CHART HELPERS ────────────────────────────────────── */
+function chScale(){return{ticks:{color:getCS('--text2'),font:{family:'Outfit',weight:'600',size:11}},grid:{color:getCS('--border')}};}
+function chOpts(label){return{responsive:true,plugins:{legend:{display:false},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'}}},scales:{x:chScale(),y:chScale()}};}
+
+/* ── DROPDOWNS ────────────────────────────────────────── */
+function fillFachDrops() {
+  const opts = SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  ['note-fach','lernen-fach','quick-fach','thema-fach','timer-fach'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.innerHTML=opts||'<option value="">— Kein Fach —</option>';
+  });
+  const ef=document.getElementById('event-fach');
+  if(ef) ef.innerHTML='<option value="">Kein Fach</option>'+opts;
+}
+function fillMethodeDrops(){
+  const el=document.getElementById('lernen-methode');
+  if(el) el.innerHTML='<option value="">— Methode —</option>'+SF.methoden.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+}
+function fillSettingsThemaFach(){
+  const sel=document.getElementById('settings-thema-fach');
+  if(!sel||!SF.faecher.length) return;
+  sel.innerHTML=SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  renderSettingsThemen();
+}
+
+/* ── FACH ─────────────────────────────────────────────── */
+const PRESET_COLORS=['#EF4444','#3B82F6','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#84CC16','#F97316','#6366F1'];
+function buildColorDots(){
+  const el=document.getElementById('fach-cdots'); if(!el) return;
+  el.innerHTML=PRESET_COLORS.map(c=>`<div class="cdot${c===SF.selColor?' sel':''}" style="background:${c}" onclick="selColor('${c}')"></div>`).join('');
+}
+function selColor(c){
+  SF.selColor=c;
+  document.querySelectorAll('.cdot').forEach(d=>{
+    const bg=d.style.backgroundColor;
+    const hex=PRESET_COLORS.find(x=>{const tmp=document.createElement('div');tmp.style.background=x;document.body.appendChild(tmp);const res=getComputedStyle(tmp).backgroundColor;document.body.removeChild(tmp);return res===bg;});
+    d.classList.toggle('sel',hex===c||d.style.background===c);
+  });
+}
+function openAddFach(){buildColorDots();document.getElementById('new-fach-name').value='';openModal('fach');}
+async function saveFach(){
+  const name=document.getElementById('new-fach-name').value.trim();
+  if(!name){toast('Bitte Fachname eingeben','err');return;}
+  const r=await api('POST','/faecher',{name,farbe:SF.selColor});
+  if(r.id){
+    SF.faecher.push(r);fillFachDrops();fillSettingsThemaFach();
+    document.getElementById('new-fach-name').value='';
+    closeModal('fach');toast('✅ Fach "'+name+'" hinzugefügt','ok');
+    if(SF.curPage==='noten') renderNoten();
+    if(SF.curPage==='einstellungen') renderSettingsFaecher();
+  }
+}
+async function delFach(fid){
+  if(!confirm('Fach und alle zugehörigen Daten löschen?')) return;
+  await api('DELETE','/faecher/'+fid);
+  SF.faecher=SF.faecher.filter(f=>f.id!==fid);
+  SF.noten=SF.noten.filter(n=>n.fach_id!==fid);
+  SF.eintraege=SF.eintraege.filter(e=>e.fach_id!==fid);
+  fillFachDrops();fillSettingsThemaFach();
+  toast('Fach gelöscht','ok');
+  if(SF.curPage==='noten') renderNoten();
+  if(SF.curPage==='einstellungen') renderSettingsFaecher();
+}
+
+/* ── NOTEN ────────────────────────────────────────────── */
+function renderNoten(){
+  const el=document.getElementById('noten-list'); if(!el) return;
+  if(!SF.faecher.length){el.innerHTML=emptyHTML('🎓','Keine Fächer','Gehe zu Einstellungen und füge dein erstes Fach hinzu.');return;}
+  el.innerHTML=SF.faecher.map(fach=>{
+    const fn=SF.noten.filter(n=>n.fach_id===fach.id);
+    const avg=fn.length?(fn.reduce((s,n)=>s+n.note,0)/fn.length).toFixed(2):null;
+    const ac=!avg?'avg-none':+avg>=5?'avg-good':+avg>=4?'avg-ok':'avg-bad';
+    const rows=fn.length
+      ?fn.map(n=>{const nc=n.note>=5?'nb-good':n.note>=4?'nb-ok':'nb-bad';return`<tr><td><div class="nb ${nc}">${n.note}</div></td><td>${n.titel||'–'}</td><td>${fmtDate(n.datum)}</td><td><span class="chip">Sem. ${n.semester||1}</span></td><td><div style="display:flex;gap:4px;justify-content:flex-end"><button class="btn-icon" onclick="openEditNote(${n.id})">✏️</button><button class="btn-icon" onclick="delNote(${n.id})">🗑️</button></div></td></tr>`;}).join('')
+      :`<tr><td colspan="5" style="text-align:center;padding:28px 20px"><div style="color:var(--text3);font-size:.84rem">Noch keine Noten</div><button class="btn btn-p btn-sm" style="margin-top:10px" onclick="openAddNoteForFach(${fach.id})">+ Erste Note</button></td></tr>`;
+    return`<div class="fach-card" id="fc-${fach.id}"><div class="fach-hd" onclick="toggleFach(${fach.id})"><div class="fach-hd-l"><div class="fach-bar" style="background:${fach.farbe}"></div><div><div class="fach-name">${fach.name}</div><div class="fach-cnt">${fn.length} Note${fn.length!==1?'n':''}</div></div><div class="avg ${ac}">⌀ ${avg||'–'}</div></div><span class="fach-chev">▶</span></div><div class="fach-body"><table class="notes-tbl"><thead><tr><th>Note</th><th>Titel</th><th>Datum</th><th>Semester</th><th style="text-align:right">Aktionen</th></tr></thead><tbody>${rows}</tbody></table><div class="fach-foot"><button class="btn btn-p btn-sm" onclick="openAddNoteForFach(${fach.id})">+ Note hinzufügen</button></div></div></div>`;
+  }).join('');
+}
+function toggleFach(id){document.getElementById('fc-'+id)?.classList.toggle('open');}
+function openAddNote(){document.getElementById('note-edit-id').value='';document.getElementById('modal-note-title').textContent='📝 Note hinzufügen';['note-val','note-titel'].forEach(id=>document.getElementById(id).value='');document.getElementById('note-datum').value=new Date().toISOString().split('T')[0];openModal('note');}
+function openAddNoteForFach(fid){openAddNote();document.getElementById('note-fach').value=fid;}
+function openEditNote(nid){
+  const n=SF.noten.find(x=>x.id===nid); if(!n) return;
+  document.getElementById('note-edit-id').value=nid;
+  document.getElementById('modal-note-title').textContent='✏️ Note bearbeiten';
+  document.getElementById('note-fach').value=n.fach_id;
+  document.getElementById('note-val').value=n.note;
+  document.getElementById('note-sem').value=n.semester||1;
+  document.getElementById('note-titel').value=n.titel||'';
+  document.getElementById('note-datum').value=n.datum;
+  openModal('note');
+}
+async function saveNote(){
+  const fid=+document.getElementById('note-fach').value;
+  const val=+document.getElementById('note-val').value;
+  const sem=document.getElementById('note-sem').value;
+  const titel=document.getElementById('note-titel').value.trim();
+  const datum=document.getElementById('note-datum').value;
+  const eid=document.getElementById('note-edit-id').value;
+  if(!fid||!val||!datum){toast('Fach, Note und Datum erforderlich','err');return;}
+  if(val<1||val>6){toast('Note muss zwischen 1 und 6 sein','err');return;}
+  let r;
+  if(eid){r=await api('PUT','/noten/'+eid,{fach_id:fid,note:val,semester:sem,titel,datum});if(r.id)SF.noten=SF.noten.map(n=>n.id===+eid?r:n);}
+  else{r=await api('POST','/noten',{fach_id:fid,note:val,semester:sem,titel,datum});if(r.id)SF.noten.push(r);}
+  if(r.id){closeModal('note');toast(eid?'✅ Note aktualisiert':'✅ Note gespeichert','ok');renderNoten();}
+  else toast('Fehler beim Speichern','err');
+}
+async function delNote(nid){
+  if(!confirm('Note löschen?')) return;
+  await api('DELETE','/noten/'+nid);
+  SF.noten=SF.noten.filter(n=>n.id!==nid);
+  toast('Note gelöscht','ok'); renderNoten();
+}
+
+/* ── LERNEN ───────────────────────────────────────────── */
+const timer={running:false,sec:0,iv:null};
+function renderLernen(){
+  const el=document.getElementById('lernen-list'); if(!el) return;
+  const ee=SF.eintraege.filter(e=>!e.geplant);
+  const cnt=document.getElementById('lernen-count');
+  if(cnt) cnt.textContent=`${ee.length} Eintrag${ee.length!==1?'e':''}`;
+  el.innerHTML=ee.length?ee.map(e=>entryHTML(e,true)).join(''):emptyHTML('📚','Noch keine Einträge','Nutze den Timer oder den Schnelleintrag');
+}
+function updateTimerFachLabel(){const sel=document.getElementById('timer-fach');const lbl=document.getElementById('timer-fach-lbl');if(lbl&&sel)lbl.textContent=sel.options[sel.selectedIndex]?.text||'Kein Fach gewählt';}
+function toggleTimer(){
+  if(timer.running){clearInterval(timer.iv);timer.running=false;document.getElementById('timer-startstop').textContent='▶ Fortsetzen';document.getElementById('timer-state-lbl').textContent='Pausiert';}
+  else{timer.running=true;timer.iv=setInterval(()=>{timer.sec++;updateTimerDisplay();},1000);document.getElementById('timer-startstop').textContent='⏸ Pause';document.getElementById('timer-state-lbl').textContent='Läuft';}
+}
+function updateTimerDisplay(){
+  const h=Math.floor(timer.sec/3600),m=Math.floor((timer.sec%3600)/60),s=timer.sec%60;
+  document.getElementById('timer-display').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const offset=502.65*(1-Math.min(timer.sec/3600,1));
+  const ring=document.getElementById('ring-fill');if(ring)ring.style.strokeDashoffset=offset;
+}
+function resetTimer(){clearInterval(timer.iv);timer.running=false;timer.sec=0;updateTimerDisplay();document.getElementById('timer-startstop').textContent='▶ Starten';document.getElementById('timer-state-lbl').textContent='Bereit';}
+async function saveTimerEntry(){
+  if(timer.sec<30){toast('Mindestens 30 Sekunden aufnehmen','err');return;}
+  const fid=+document.getElementById('timer-fach').value;
+  if(!fid){toast('Bitte ein Fach auswählen','err');return;}
+  const dauer=Math.round(timer.sec/60)||1;
+  const fach=SF.faecher.find(f=>f.id===fid);
+  const r=await api('POST','/lerneintraege',{fach_id:fid,titel:'Timer-Sitzung '+(fach?.name||''),dauer_minuten:dauer,datum:new Date().toISOString().split('T')[0],geplant:0});
+  if(r.id){SF.eintraege.push(r);resetTimer();renderLernen();toast('✅ '+dauer+' Minuten gespeichert!','ok');}
+}
+function loadThemenQuick(){const fid=+document.getElementById('quick-fach')?.value;const sel=document.getElementById('quick-thema');if(!sel)return;const ts=SF.themen.filter(t=>t.fach_id===fid&&!t.abgeschlossen);sel.innerHTML='<option value="">— Thema auswählen —</option>'+ts.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');}
+function applyThemaQuick(){const v=document.getElementById('quick-thema')?.value;if(v)document.getElementById('quick-titel').value=v;}
+async function quickSave(){
+  const fid=+document.getElementById('quick-fach').value;
+  const titel=document.getElementById('quick-titel').value.trim();
+  const dauer=+document.getElementById('quick-dauer').value;
+  const datum=document.getElementById('quick-datum').value;
+  if(!fid||!titel||!dauer||!datum){toast('Alle Pflichtfelder ausfüllen','err');return;}
+  const r=await api('POST','/lerneintraege',{fach_id:fid,titel,dauer_minuten:dauer,datum,geplant:0});
+  if(r.id){SF.eintraege.push(r);document.getElementById('quick-titel').value='';document.getElementById('quick-dauer').value='';renderLernen();toast('✅ Eintrag gespeichert — Statistiken werden beim nächsten Besuch aktualisiert','ok');}
+}
+function openAddLernen(){
+  document.getElementById('lernen-edit-id').value='';
+  document.getElementById('lernen-modal-title').textContent='📚 Lerneintrag';
+  ['lernen-desc','lernen-dauer','lernen-titel'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('lernen-datum').value=new Date().toISOString().split('T')[0];
+  fillFachDrops();fillMethodeDrops();
+  const ts=document.getElementById('lernen-thema-sel');if(ts)ts.innerHTML='<option value="">— Thema auswählen —</option>';
+  openModal('lernen');
+}
+function openEditLernen(eid){
+  const e=SF.eintraege.find(x=>x.id===eid); if(!e) return;
+  document.getElementById('lernen-edit-id').value=eid;
+  document.getElementById('lernen-modal-title').textContent='✏️ Eintrag bearbeiten';
+  document.getElementById('lernen-fach').value=e.fach_id;
+  document.getElementById('lernen-methode').value=e.methode_id||'';
+  document.getElementById('lernen-titel').value=e.titel;
+  document.getElementById('lernen-desc').value=e.beschreibung||'';
+  document.getElementById('lernen-dauer').value=e.dauer_minuten;
+  document.getElementById('lernen-datum').value=e.datum;
+  openModal('lernen');
+}
+async function saveLerneintrag(){
+  const fid=+document.getElementById('lernen-fach').value;
+  const mid=+document.getElementById('lernen-methode').value||null;
+  const titel=document.getElementById('lernen-titel').value.trim();
+  const desc=document.getElementById('lernen-desc').value.trim();
+  const dauer=+document.getElementById('lernen-dauer').value;
+  const datum=document.getElementById('lernen-datum').value;
+  const eid=document.getElementById('lernen-edit-id').value;
+  if(!fid||!titel||!dauer||!datum){toast('Fach, Titel, Dauer und Datum erforderlich','err');return;}
+  let r;
+  if(eid){r=await api('PUT','/lerneintraege/'+eid,{fach_id:fid,methode_id:mid,titel,beschreibung:desc,dauer_minuten:dauer,datum});if(r.id)SF.eintraege=SF.eintraege.map(e=>e.id===+eid?r:e);}
+  else{r=await api('POST','/lerneintraege',{fach_id:fid,methode_id:mid,titel,beschreibung:desc,dauer_minuten:dauer,datum});if(r.id)SF.eintraege.push(r);}
+  if(r.id){closeModal('lernen');toast(eid?'✅ Eintrag aktualisiert':'✅ Eintrag gespeichert','ok');renderLernen();}
+}
+async function delEintrag(eid){
+  if(!confirm('Eintrag löschen?')) return;
+  await api('DELETE','/lerneintraege/'+eid);
+  SF.eintraege=SF.eintraege.filter(e=>e.id!==eid);
+  toast('Eintrag gelöscht','ok'); renderLernen();
+}
+function loadThemenLernen(){const fid=+document.getElementById('lernen-fach')?.value;const sel=document.getElementById('lernen-thema-sel');if(!sel)return;const ts=SF.themen.filter(t=>t.fach_id===fid&&!t.abgeschlossen);sel.innerHTML='<option value="">— Thema auswählen —</option>'+ts.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');}
+function applyThemaLernen(){const v=document.getElementById('lernen-thema-sel')?.value;if(v)document.getElementById('lernen-titel').value=v;}
+
+/* ── THEMEN ───────────────────────────────────────────── */
+function openThemenModal(){
+  const el=document.getElementById('thema-fach');
+  if(el&&SF.faecher.length) el.innerHTML=SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  renderThemenList(); openModal('themen');
+}
+function renderThemenList(){
+  const fid=+document.getElementById('thema-fach')?.value;
+  const el=document.getElementById('themen-list'); if(!el) return;
+  const ts=SF.themen.filter(t=>t.fach_id===fid);
+  if(!ts.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem;padding:8px 0">Noch keine Themen für dieses Fach.</p>';return;}
+  el.innerHTML=ts.map(t=>`<div class="thema-row"><span class="${t.abgeschlossen?'thema-done':''}" style="flex:1">${t.name}</span><button class="btn-icon" onclick="toggleThema(${t.id})">${t.abgeschlossen?'↩️':'✅'}</button><button class="btn-icon" onclick="delThema(${t.id})">🗑️</button></div>`).join('');
+}
+async function addThema(){
+  const name=document.getElementById('thema-name').value.trim();
+  const fid=+document.getElementById('thema-fach').value;
+  if(!name){toast('Thema-Name eingeben','err');return;}
+  if(!fid){toast('Bitte zuerst ein Fach auswählen','err');return;}
+  const r=await api('POST','/themen',{fach_id:fid,name});
+  if(r.id){SF.themen.push(r);document.getElementById('thema-name').value='';renderThemenList();toast('✅ Thema hinzugefügt','ok');}
+  else toast('Fehler beim Speichern','err');
+}
+async function toggleThema(tid){
+  const t=SF.themen.find(x=>x.id===tid);if(!t)return;
+  const newVal=t.abgeschlossen?0:1;
+  await api('PUT','/themen/'+tid,{abgeschlossen:newVal});
+  SF.themen=SF.themen.map(x=>x.id===tid?{...x,abgeschlossen:newVal}:x);
+  renderThemenList();
+}
+async function delThema(tid){await api('DELETE','/themen/'+tid);SF.themen=SF.themen.filter(t=>t.id!==tid);renderThemenList();}
+
+/* ── KALENDER ─────────────────────────────────────────── */
+const cal={date:new Date(),view:'monat',dragEv:null,selEvId:null,didDrop:false,dragging:false};
+function renderKalender(){
+  const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const el=document.getElementById('cal-title');
+  if(el) el.textContent=months[cal.date.getMonth()]+' '+cal.date.getFullYear();
+  if(cal.view==='monat') renderMonat(); else renderWoche();
+  renderUpcoming();
+}
+function calPrev(){cal.view==='monat'?cal.date.setMonth(cal.date.getMonth()-1):cal.date.setDate(cal.date.getDate()-7);renderKalender();}
+function calNext(){cal.view==='monat'?cal.date.setMonth(cal.date.getMonth()+1):cal.date.setDate(cal.date.getDate()+7);renderKalender();}
+function calToday(){cal.date=new Date();renderKalender();}
+function setCalView(v){
+  cal.view=v;
+  document.getElementById('vbtn-monat').classList.toggle('active',v==='monat');
+  document.getElementById('vbtn-woche').classList.toggle('active',v==='woche');
+  renderKalender();
+}
+function renderMonat(){
+  const body=document.getElementById('cal-body'); if(!body) return;
+  const y=cal.date.getFullYear(),m=cal.date.getMonth();
+  const startDay=(new Date(y,m,1).getDay()+6)%7;
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const today=new Date().toISOString().split('T')[0];
+  let html='';
+  for(let i=0;i<startDay;i++){const d=new Date(y,m,-startDay+i+1);html+=`<div class="cal-cell other"><div class="cal-date">${d.getDate()}</div></div>`;}
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(y,m,d).toISOString().split('T')[0];
+    const evs=SF.kalender.filter(e=>e.datum===date);
+    const isToday=date===today;
+    const evHTML=evs.slice(0,3).map(e=>{
+      const fach=SF.faecher.find(f=>f.id===e.fach_id);
+      const bg=fach?fach.farbe:'#6366F1';
+      return`<div class="cal-ev" style="background:${bg}" draggable="true" ondragstart="calDragStart(event,${e.id})" ondragend="calDragEnd()" onclick="event.stopPropagation();showEventDetail(${e.id})" title="${e.titel}">${e.uhrzeit_start?e.uhrzeit_start.slice(0,5)+' ':''}${e.titel}</div>`;
+    }).join('');
+    const more=evs.length>3?`<div class="cal-more">+${evs.length-3} mehr</div>`:'';
+    html+=`<div class="cal-cell${isToday?' today':''}" data-date="${date}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="calDrop(event,'${date}')" onclick="calCellClick(event,'${date}')"><div class="cal-date">${d}</div>${evHTML}${more}</div>`;
+  }
+  body.innerHTML=html;
+}
+function renderWoche(){
+  const body=document.getElementById('cal-body'); if(!body) return;
+  const d=new Date(cal.date);
+  d.setDate(d.getDate()-((d.getDay()+6)%7));
+  const today=new Date().toISOString().split('T')[0];
+  let html='';
+  for(let i=0;i<7;i++){
+    const date=d.toISOString().split('T')[0];
+    const evs=SF.kalender.filter(e=>e.datum===date);
+    const isToday=date===today;
+    const evHTML=evs.map(e=>{const fach=SF.faecher.find(f=>f.id===e.fach_id);const bg=fach?fach.farbe:'#6366F1';return`<div class="cal-ev" style="background:${bg}" draggable="true" ondragstart="calDragStart(event,${e.id})" ondragend="calDragEnd()" onclick="event.stopPropagation();showEventDetail(${e.id})">${e.uhrzeit_start?e.uhrzeit_start.slice(0,5)+' ':''}${e.titel}</div>`;}).join('');
+    html+=`<div class="cal-cell${isToday?' today':''}" style="min-height:120px" data-date="${date}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="calDrop(event,'${date}')" onclick="calCellClick(event,'${date}')"><div class="cal-date">${d.getDate()}</div>${evHTML}</div>`;
+    d.setDate(d.getDate()+1);
+  }
+  body.innerHTML=html;
+}
+function renderUpcoming(){
+  const el=document.getElementById('upcoming-events'); if(!el) return;
+  const today=new Date().toISOString().split('T')[0];
+  const upcoming=SF.kalender.filter(e=>e.datum>=today).sort((a,b)=>a.datum.localeCompare(b.datum)).slice(0,5);
+  el.innerHTML=upcoming.length?upcoming.map(e=>{const fach=SF.faecher.find(f=>f.id===e.fach_id);const bg=fach?fach.farbe:'#6366F1';return`<div class="entry-item"><div class="entry-dot" style="background:${bg}"></div><div class="entry-info"><div class="entry-title">${e.titel}</div><div class="entry-meta">${fmtDate(e.datum)}${e.uhrzeit_start?' · '+e.uhrzeit_start.slice(0,5):''}${fach?' · '+fach.name:''}</div></div><button class="btn-icon" onclick="delEvent(${e.id})">🗑️</button></div>`;}).join(''):emptyHTML('📅','Keine bevorstehenden Termine','Klick auf einen Kalendertag um einen Termin zu planen');
+}
+function showEventDetail(eid){
+  const e=SF.kalender.find(x=>x.id===eid); if(!e) return;
+  cal.selEvId=eid;
+  const fach=SF.faecher.find(f=>f.id===e.fach_id);
+  document.getElementById('ev-detail-title').textContent='📅 '+e.titel;
+  document.getElementById('ev-detail-info').textContent=fmtDate(e.datum)+(e.uhrzeit_start?' · '+e.uhrzeit_start.slice(0,5):'')+(fach?' · '+fach.name:'');
+  openModal('event-detail');
+}
+async function delEventFromDetail(){
+  if(!cal.selEvId) return;
+  await api('DELETE','/kalender/'+cal.selEvId);
+  SF.kalender=SF.kalender.filter(e=>e.id!==cal.selEvId);
+  closeModal('event-detail'); renderKalender(); toast('Termin gelöscht','ok');
+}
+function openAddEvent(date){
+  if(cal.didDrop) return;
+  const ef=document.getElementById('event-fach');
+  if(ef) ef.innerHTML='<option value="">Kein Fach</option>'+SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  document.getElementById('event-titel').value='';
+  document.getElementById('event-start').value='';
+  document.getElementById('event-datum').value=date||new Date().toISOString().split('T')[0];
+  openModal('event');
+}
+async function saveEvent(){
+  const titel=document.getElementById('event-titel').value.trim();
+  const fid=+document.getElementById('event-fach').value||null;
+  const datum=document.getElementById('event-datum').value;
+  const start=document.getElementById('event-start').value;
+  if(!titel||!datum){toast('Titel und Datum erforderlich','err');return;}
+  const r=await api('POST','/kalender',{titel,fach_id:fid,datum,uhrzeit_start:start});
+  if(r.id){SF.kalender.push(r);closeModal('event');toast('✅ Termin gespeichert','ok');renderKalender();}
+}
+async function delEvent(eid){
+  if(!confirm('Termin löschen?')) return;
+  await api('DELETE','/kalender/'+eid);
+  SF.kalender=SF.kalender.filter(e=>e.id!==eid);
+  renderKalender(); toast('Termin gelöscht','ok');
+}
+function calCellClick(ev,date){if(cal.dragging)return;openAddEvent(date);}
+function calDragStart(ev,eid){cal.dragEv=eid;cal.dragging=true;ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',String(eid));}
+function calDragEnd(){setTimeout(()=>{cal.dragging=false;},200);}
+async function calDrop(ev,date){
+  ev.preventDefault();ev.stopPropagation();
+  document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  const eid=cal.dragEv||+ev.dataTransfer.getData('text/plain');
+  if(!eid){cal.dragging=false;return;}
+  const ev_obj=SF.kalender.find(e=>e.id===eid);
+  if(ev_obj&&ev_obj.is_learn_entry){toast('Lerneinträge können nicht verschoben werden','err');cal.dragEv=null;return;}
+  const r=await api('PUT','/kalender/'+eid,{datum:date});
+  if(r.id||r.titel){
+    SF.kalender=SF.kalender.map(e=>e.id===eid?{...e,...r}:e);
+    renderKalender();
+    toast('✅ Termin verschoben','ok');
+  }
+  cal.dragEv=null;
+}
+
+/* ── DASHBOARD ────────────────────────────────────────── */
+async function renderDashboard(){
+  const d=await api('GET','/stats/dashboard');
+  const lernstd=Math.floor((d.lernzeit_woche||0)/60);
+  const lernmin=(d.lernzeit_woche||0)%60;
+  const avg=(d.avg_noten||[]).filter(f=>f.avg);
+  const gesAvg=avg.length?(avg.reduce((s,f)=>s+f.avg,0)/avg.length).toFixed(2):'–';
+  const ln=d.letzte_note;
+  const sc=document.getElementById('dash-stats');
+  if(sc) sc.innerHTML=`
+    <div class="stat-card fade-in"><div class="stat-icon">⏱️</div><div class="stat-label">Lernzeit diese Woche</div><div class="stat-val">${lernstd}h <span style="font-size:1.15rem">${lernmin}m</span></div><div class="stat-sub">${d.lernzeit_woche||0} Minuten total</div></div>
+    <div class="stat-card fade-in" style="animation-delay:.05s"><div class="stat-icon">🎓</div><div class="stat-label">Aktive Fächer</div><div class="stat-val">${SF.faecher.length}</div><div class="stat-sub">Schuljahr ${new Date().getFullYear()}</div></div>
+    <div class="stat-card fade-in" style="animation-delay:.1s"><div class="stat-icon">📝</div><div class="stat-label">Letzte Note</div><div class="stat-val">${ln?ln.note:'–'}</div><div class="stat-sub">${ln?ln.fach+' · '+ln.titel:'Noch keine Noten'}</div></div>
+    <div class="stat-card fade-in" style="animation-delay:.15s"><div class="stat-icon">⭐</div><div class="stat-label">Gesamtdurchschnitt</div><div class="stat-val">${gesAvg}</div><div class="stat-sub">Über alle Fächer</div></div>`;
+  const lzf=d.lernzeit_pro_fach||[];
+  destroyChart('ch-dash-fach');
+  if(document.getElementById('ch-dash-fach')) SF.charts['ch-dash-fach']=new Chart(document.getElementById('ch-dash-fach'),{type:'bar',data:{labels:lzf.length?lzf.map(f=>f.name):SF.faecher.map(f=>f.name),datasets:[{data:lzf.length?lzf.map(f=>+(f.total/60).toFixed(1)):SF.faecher.map(()=>0),backgroundColor:lzf.length?lzf.map(f=>f.farbe+'CC'):SF.faecher.map(f=>f.farbe+'CC'),borderRadius:8,borderSkipped:false}]},options:chOpts('Stunden')});
+  const nd=(d.avg_noten||[]).filter(f=>f.avg);
+  destroyChart('ch-dash-noten');
+  if(document.getElementById('ch-dash-noten')) SF.charts['ch-dash-noten']=new Chart(document.getElementById('ch-dash-noten'),{type:'bar',data:{labels:nd.length?nd.map(f=>f.name):SF.faecher.map(f=>f.name),datasets:[{data:nd.length?nd.map(f=>f.avg):SF.faecher.map(()=>0),backgroundColor:nd.length?nd.map(f=>f.farbe+'CC'):SF.faecher.map(f=>f.farbe+'CC'),borderRadius:8,borderSkipped:false}]},options:{...chOpts('Note'),scales:{x:chScale(),y:{...chScale(),min:1,max:6}}}});
+  const ee=d.letzte_eintraege||[];
+  const dei=document.getElementById('dash-eintraege');
+  if(dei) dei.innerHTML=ee.length?ee.map(e=>entryHTML(e,false)).join(''):emptyHTML('📚','Noch keine Lerneinträge','Starte deine erste Lerneinheit unter "Lernen"');
+}
+
+/* ── STATISTIKEN ──────────────────────────────────────── */
+function emptyChart(id,type,label){
+  destroyChart(id);const el=document.getElementById(id);if(!el)return;
+  if(type==='doughnut'){SF.charts[id]=new Chart(el,{type:'doughnut',data:{labels:['Noch keine Daten'],datasets:[{data:[1],backgroundColor:[getCS('--border2')],borderWidth:0}]},options:{responsive:true,cutout:'65%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});}
+  else if(type==='radar'){SF.charts[id]=new Chart(el,{type:'radar',data:{labels:SF.faecher.length?SF.faecher.map(f=>f.name):['Fach 1','Fach 2','Fach 3'],datasets:[{data:SF.faecher.length?SF.faecher.map(()=>0):[0,0,0],borderColor:getCS('--border2'),backgroundColor:'transparent',borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{grid:{color:getCS('--border')},angleLines:{color:getCS('--border')},ticks:{display:false},pointLabels:{color:getCS('--text3'),font:{family:'Outfit',size:11}},min:0,max:6}}}});}
+  else{SF.charts[id]=new Chart(el,{type:'bar',data:{labels:['Noch keine Daten'],datasets:[{data:[0],backgroundColor:getCS('--border2'),borderRadius:8}]},options:{...chOpts(label),plugins:{legend:{display:false},tooltip:{enabled:false}}}});}
+}
+async function renderStatistiken(){
+  const d=await api('GET','/stats/auswertung');
+  const lzf=d.lernzeit_pro_fach||[];
+  destroyChart('ch-stat-fach');
+  const elF=document.getElementById('ch-stat-fach');
+  if(elF){if(lzf.length)SF.charts['ch-stat-fach']=new Chart(elF,{type:'doughnut',data:{labels:lzf.map(f=>f.name),datasets:[{data:lzf.map(f=>+(f.total/60).toFixed(1)),backgroundColor:lzf.map(f=>f.farbe+'CC'),borderWidth:0}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'right',labels:{color:getCS('--text'),font:{family:'Outfit',weight:'600',size:11},boxWidth:12,borderRadius:4,padding:12}},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'}}}}});else emptyChart('ch-stat-fach','doughnut','');}
+  const mzm=d.lernzeit_pro_methode||[];
+  destroyChart('ch-stat-meth');
+  const elM=document.getElementById('ch-stat-meth');
+  if(elM){if(mzm.length)SF.charts['ch-stat-meth']=new Chart(elM,{type:'bar',data:{labels:mzm.map(m=>m.name),datasets:[{data:mzm.map(m=>+(m.total/60).toFixed(1)),backgroundColor:mzm.map(m=>m.farbe+'CC'),borderRadius:8,borderSkipped:false}]},options:chOpts('Stunden')});else emptyChart('ch-stat-meth','bar','Stunden');}
+  const nm=d.noten_pro_methode||[];
+  destroyChart('ch-note-meth');
+  const elNM=document.getElementById('ch-note-meth');
+  if(elNM){if(nm.length)SF.charts['ch-note-meth']=new Chart(elNM,{type:'bar',data:{labels:nm.map(m=>m.name),datasets:[{data:nm.map(m=>+m.avg),backgroundColor:nm.map(m=>(m.farbe||'#6366F1')+'CC'),borderRadius:8,borderSkipped:false}]},options:{...chOpts('Note'),scales:{x:{...chScale(),min:1,max:6},y:chScale()}}});else emptyChart('ch-note-meth','bar','Note');}
+  const vl=d.verlauf_30||[];
+  destroyChart('ch-verlauf');
+  const elV=document.getElementById('ch-verlauf');
+  if(elV){const today=new Date();const labels=Array.from({length:7},(_,i)=>{const dd=new Date(today);dd.setDate(dd.getDate()-6+i);return dd.toISOString().split('T')[0].slice(5);});const dataMap=Object.fromEntries(vl.map(v=>[v.datum.slice(5),v.minuten]));SF.charts['ch-verlauf']=new Chart(elV,{type:'line',data:{labels,datasets:[{data:labels.map(l=>dataMap[l]||0),borderColor:getCS('--accent'),backgroundColor:getCS('--acc-soft'),fill:true,tension:0.4,pointRadius:3,borderWidth:2}]},options:chOpts('Minuten')});}
+  destroyChart('ch-radar');
+  const elR=document.getElementById('ch-radar');
+  if(elR){const rdata=SF.faecher.filter(f=>SF.eintraege.some(e=>e.fach_id===f.id)||SF.noten.some(n=>n.fach_id===f.id));if(rdata.length>=3){const maxLz=Math.max(1,...rdata.map(f=>SF.eintraege.filter(e=>e.fach_id===f.id).reduce((s,e)=>s+e.dauer_minuten,0)));SF.charts['ch-radar']=new Chart(elR,{type:'radar',data:{labels:rdata.map(f=>f.name),datasets:[{label:'Lernzeit',data:rdata.map(f=>{const lz=SF.eintraege.filter(e=>e.fach_id===f.id).reduce((s,e)=>s+e.dauer_minuten,0);return+(lz/maxLz*6).toFixed(1);}),borderColor:getCS('--accent'),backgroundColor:getCS('--acc-soft'),borderWidth:2},{label:'Noten',data:rdata.map(f=>{const ns=SF.noten.filter(n=>n.fach_id===f.id);return ns.length?+(ns.reduce((s,n)=>s+n.note,0)/ns.length).toFixed(2):0;}),borderColor:getCS('--green'),backgroundColor:'rgba(22,163,74,.15)',borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:getCS('--text'),font:{family:'Outfit',weight:'600',size:11}}},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'}}},scales:{r:{grid:{color:getCS('--border')},angleLines:{color:getCS('--border')},ticks:{display:false},pointLabels:{color:getCS('--text2'),font:{family:'Outfit',weight:'600',size:11}},min:0,max:6}}}});}else emptyChart('ch-radar','radar','');}
+}
+
+/* ── METHODEN ─────────────────────────────────────────── */
+const METHODEN_INFO={'Karteikarten':{icon:'🃏',desc:'Lernkarten erstellen und durch aktives Abrufen wiederholen. Ideal für Definitionen, Vokabeln und Formeln.'},'Videos':{icon:'🎥',desc:'Erklärvideos ansehen, pausieren und nachvollziehen. Gut für visuelle Lerner bei komplexen Themen.'},'Aufgaben lösen':{icon:'✏️',desc:'Übungsaufgaben selbstständig lösen und Fehler analysieren. Effektiv für Mathematik und Naturwissenschaften.'},'Active Recall':{icon:'🧠',desc:'Stoff ohne Hilfsmittel aus dem Gedächtnis wiedergeben. Eine der wissenschaftlich wirksamsten Methoden.'},'Zusammenfassung':{icon:'📄',desc:'Eigene strukturierte Zusammenfassungen schreiben. Hilft beim Verstehen und Behalten von Texten.'},'Lesen':{icon:'📖',desc:'Lehrbücher und Texte aktiv lesen, wichtiges markieren und Notizen machen.'},'Spaced Repetition':{icon:'🔄',desc:'Wiederholung in steigenden Zeitintervallen. Maximiert Langzeitgedächtnis mit minimalem Aufwand.'},'Pomodoro':{icon:'🍅',desc:'25 Minuten konzentriert lernen, 5 Minuten Pause. Steigert Fokus und verhindert Ermüdung.'},'Mind Map':{icon:'🗺️',desc:'Themen visuell als Gedankenkarte strukturieren. Fördert vernetztes Denken und Überblick.'}};
+function renderMethoden(){
+  const el=document.getElementById('methoden-grid');if(!el)return;
+  if(!SF.methoden.length){el.innerHTML=emptyHTML('⚡','Keine Methoden','Keine Lernmethoden gefunden.');return;}
+  el.innerHTML=SF.methoden.map(m=>{
+    // Custom methods store icon as "emoji|desc"
+    let customDesc=m.beschreibung||'';let customIcon='⚡';
+    if(!m.ist_vordefiniert&&customDesc.includes('|')){const parts=customDesc.split('|');customIcon=parts[0];customDesc=parts.slice(1).join('|');}
+    const info=METHODEN_INFO[m.name]||{icon:customIcon,desc:customDesc||'–'};
+    const isOwn=!m.ist_vordefiniert;
+    return`<div class="meth-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px"><div style="display:flex;align-items:center;gap:10px"><div style="width:44px;height:44px;border-radius:12px;background:${m.farbe||'#6366F1'}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem">${info.icon}</div><div><div class="meth-name">${m.name}</div><div style="font-size:.72rem;font-weight:700;color:${isOwn?'var(--accent)':'var(--text3)'};text-transform:uppercase;letter-spacing:.05em">${isOwn?'Eigene':'Standard'}</div></div></div>${isOwn?`<button class="btn-icon" onclick="delMethode(${m.id})">🗑️</button>`:''}</div><p style="font-size:.84rem;color:var(--text2);line-height:1.65;margin-bottom:12px">${info.desc}</p>${m.empfehlung?`<div class="meth-for">📚 ${m.empfehlung}</div>`:''}</div>`;
+  }).join('');
+}
+function openMethodeModal(){
+  ['m-name','m-desc','m-empf'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-icon').value='💡';
+  openModal('methode');
+  setTimeout(buildIconGrid,50);
+}
+const METHODEN_ICONS=['💡','🔬','🎨','✍️','🎵','🏃','💻','📐','🗂️','🧩','🔭','📷','🎯','💬','🤝','📱','🌍','⚽','🎮','🏆','🔑','💎','🌱','🧪','📡','🎤','🎸','🔮'];
+function buildIconGrid(){
+  const grid=document.getElementById('m-icon-grid');if(!grid)return;
+  const cur=document.getElementById('m-icon')?.value||'💡';
+  grid.innerHTML=METHODEN_ICONS.map(ico=>`<button type="button" onclick="selMethodeIcon('${ico}')" style="width:100%;aspect-ratio:1;border-radius:8px;font-size:1.3rem;display:flex;align-items:center;justify-content:center;border:2px solid ${ico===cur?'var(--accent)':'var(--border)'};background:${ico===cur?'var(--acc-soft)':'var(--bg2)'};transition:all .15s;cursor:pointer">${ico}</button>`).join('');
+}
+function selMethodeIcon(ico){
+  document.getElementById('m-icon').value=ico;
+  buildIconGrid();
+}
+async function saveMethode(){
+  const name=document.getElementById('m-name').value.trim();
+  const desc=document.getElementById('m-desc').value.trim();
+  const empf=document.getElementById('m-empf').value.trim();
+  const icon=document.getElementById('m-icon')?.value||'💡';
+  if(!name){toast('Name erforderlich','err');return;}
+  // Store icon in beschreibung prefix if no dedicated column
+  const fullDesc=icon+'|'+desc;
+  const r=await api('POST','/lernmethoden',{name,beschreibung:fullDesc,empfehlung:empf});
+  if(r.id){SF.methoden.push(r);fillMethodeDrops();closeModal('methode');toast('✅ Methode gespeichert','ok');renderMethoden();}
+}
+async function delMethode(mid){
+  if(!confirm('Methode löschen?')) return;
+  await api('DELETE','/lernmethoden/'+mid);
+  SF.methoden=SF.methoden.filter(m=>m.id!==mid);
+  renderMethoden(); toast('Methode gelöscht','ok');
+}
+
+/* ── EINSTELLUNGEN ────────────────────────────────────── */
+function renderSettingsPage(){
+  setUserUI();
+  renderSettingsFaecher();
+  fillSettingsThemaFach();
+}
+function renderSettingsFaecher(){
+  const el=document.getElementById('settings-faecher');if(!el)return;
+  if(!SF.faecher.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem;padding:8px 0">Noch keine Fächer vorhanden.</p>';return;}
+  el.innerHTML=SF.faecher.map(f=>`<div class="settings-row"><div style="display:flex;align-items:center;gap:10px"><div style="width:14px;height:14px;border-radius:4px;background:${f.farbe};flex-shrink:0"></div><div><div class="settings-lbl">${f.name}</div><div class="settings-sub">${SF.noten.filter(n=>n.fach_id===f.id).length} Noten · ${SF.eintraege.filter(e=>e.fach_id===f.id).length} Einträge</div></div></div><button class="btn btn-danger btn-xs" onclick="delFach(${f.id})">Löschen</button></div>`).join('');
+}
+function renderSettingsThemen(){
+  const el=document.getElementById('settings-themen');if(!el)return;
+  const fid=+document.getElementById('settings-thema-fach')?.value;
+  if(!fid){el.innerHTML='<p style="color:var(--text3);font-size:.82rem">Fach oben auswählen</p>';return;}
+  const ts=SF.themen.filter(t=>t.fach_id===fid);
+  if(!ts.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem">Noch keine Themen für dieses Fach.</p>';return;}
+  el.innerHTML=ts.map(t=>`<div class="thema-row"><span class="${t.abgeschlossen?'thema-done':''}" style="flex:1;font-size:.88rem">${t.name}</span><button class="btn-icon" onclick="settingsToggleThema(${t.id})">${t.abgeschlossen?'↩️':'✅'}</button><button class="btn-icon" onclick="settingsDelThema(${t.id})">🗑️</button></div>`).join('');
+}
+async function settingsToggleThema(tid){
+  const t=SF.themen.find(x=>x.id===tid);if(!t)return;
+  const newVal=t.abgeschlossen?0:1;
+  await api('PUT','/themen/'+tid,{abgeschlossen:newVal});
+  SF.themen=SF.themen.map(x=>x.id===tid?{...x,abgeschlossen:newVal}:x);
+  renderSettingsThemen();
+}
+async function settingsDelThema(tid){await api('DELETE','/themen/'+tid);SF.themen=SF.themen.filter(t=>t.id!==tid);renderSettingsThemen();toast('Thema gelöscht','ok');}
+async function settingsAddThema(){
+  const name=document.getElementById('settings-thema-new').value.trim();
+  const fid=+document.getElementById('settings-thema-fach')?.value;
+  if(!name||!fid){toast('Thema und Fach erforderlich','err');return;}
+  const r=await api('POST','/themen',{fach_id:fid,name});
+  if(r.id){SF.themen.push(r);document.getElementById('settings-thema-new').value='';renderSettingsThemen();toast('✅ Thema hinzugefügt','ok');}
+}
+function uploadProfilePic(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const data=ev.target.result;localStorage.setItem('sf-pic',data);
+    const pimg=document.getElementById('profile-img');const pi=document.getElementById('profile-initials');
+    if(pimg){pimg.src=data;pimg.style.display='block';}if(pi)pi.style.display='none';
+    const sav=document.getElementById('sidebar-uav');
+    if(sav)sav.innerHTML=`<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`;
+    toast('✅ Profilbild gespeichert','ok');
+  };reader.readAsDataURL(file);
+}
+function removeProfilePic(){
+  localStorage.removeItem('sf-pic');
+  const pimg=document.getElementById('profile-img');const pi=document.getElementById('profile-initials');
+  if(pimg)pimg.style.display='none';if(pi)pi.style.display='block';
+  const sav=document.getElementById('sidebar-uav');if(sav&&SF.user)sav.textContent=SF.user.username[0].toUpperCase();
+  toast('Profilbild entfernt','ok');
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

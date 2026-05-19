@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Planung{% endblock %}
+{% block page_title %}Planung{% endblock %}
+{% block topbar_actions %}<button class="btn btn-p btn-sm" onclick="openAddEvent()">+ Termin</button>{% endblock %}
+{% block content %}
+<div class="cal-wrap">
+  <div class="cal-nav">
+    <div class="cal-nav-l">
+      <button class="btn btn-ico btn-g" onclick="calPrev()">◀</button>
+      <button class="btn btn-ico btn-g" onclick="calNext()">▶</button>
+      <button class="btn btn-s btn-sm" onclick="calToday()">Heute</button>
+    </div>
+    <div class="cal-title" id="cal-title">Lade...</div>
+    <div class="cal-nav-r">
+      <div class="view-toggle">
+        <button class="vbtn active" id="vbtn-monat" onclick="setCalView('monat')">Monat</button>
+        <button class="vbtn" id="vbtn-woche" onclick="setCalView('woche')">Woche</button>
+      </div>
+    </div>
+  </div>
+  <div class="cal-head">
+    <div class="cal-dow">Mo</div><div class="cal-dow">Di</div><div class="cal-dow">Mi</div>
+    <div class="cal-dow">Do</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div><div class="cal-dow">So</div>
+  </div>
+  <div class="cal-body" id="cal-body"></div>
+</div>
+<div style="margin-top:24px">
+  <div class="sec-head"><div><div class="sec-title">📌 Kommende Termine</div><div class="sec-sub">Geplante Lerneinheiten</div></div></div>
+  <div id="upcoming-events"></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/kalender.js"></script>{% endblock %}

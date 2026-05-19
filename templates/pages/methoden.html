@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Lernmethoden{% endblock %}
+{% block page_title %}Lernmethoden{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-p btn-sm" onclick="openAddMethode()">
+    <svg width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-plus"/></svg>
+    Eigene Methode
+  </button>
+{% endblock %}
+{% block content %}
+<div class="grid-auto" id="methoden-grid">
+  <div class="empty"><div class="empty-icon">⚡</div><h3>Lade...</h3></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/methoden.js"></script>{% endblock %}

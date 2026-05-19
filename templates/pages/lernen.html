@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Lernen{% endblock %}
+{% block page_title %}Lernen{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-s btn-sm" onclick="openThemenModal()">📋 Themen</button>
+  <button class="btn btn-p btn-sm" onclick="openAddLernen()">+ Eintrag</button>
+{% endblock %}
+{% block content %}
+<div class="grid-2" style="margin-bottom:28px">
+  <div>
+    <div class="sec-title" style="margin-bottom:14px">⏱️ Lern-Timer</div>
+    <div class="timer-card">
+      <div class="timer-label">Aktuelle Sitzung</div>
+      <div class="timer-ring-wrap">
+        <svg width="190" height="190" viewBox="0 0 190 190">
+          <circle class="ring-bg" cx="95" cy="95" r="80" stroke-width="10"/>
+          <circle class="ring-fill" id="ring-fill" cx="95" cy="95" r="80" stroke-width="10" stroke-dasharray="502.65" stroke-dashoffset="502.65"/>
+        </svg>
+        <div class="timer-center">
+          <div class="timer-time" id="timer-display">00:00:00</div>
+          <div class="timer-state" id="timer-state-lbl">Bereit</div>
+        </div>
+      </div>
+      <div class="timer-fach-lbl" id="timer-fach-lbl">Kein Fach gewählt</div>
+      <div class="timer-btns">
+        <button class="tbtn tb-main" id="timer-startstop" onclick="toggleTimer()">▶ Starten</button>
+        <button class="tbtn tb-save" onclick="saveTimerEntry()">💾 Speichern</button>
+        <button class="tbtn tb-rst" onclick="resetTimer()">↺ Reset</button>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="fg"><label class="flbl">Fach für Timer</label>
+        <select class="fi" id="timer-fach" onchange="updateTimerFachLabel()"></select>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="sec-title" style="margin-bottom:14px">📝 Schnelleintrag</div>
+    <div class="card" style="padding:22px">
+      <div class="fg"><label class="flbl">Fach *</label><select class="fi" id="quick-fach" onchange="loadThemenQuick()"></select></div>
+      <div class="fg"><label class="flbl">Thema</label>
+        <select class="fi" id="quick-thema" onchange="applyThemaQuick()"><option value="">— Thema auswählen —</option></select>
+      </div>
+      <div class="fg"><label class="flbl">Titel *</label><input class="fi" id="quick-titel" placeholder="Was hast du gelernt?"></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Minuten *</label><input class="fi" id="quick-dauer" type="number" min="1" placeholder="45"></div>
+        <div class="fg"><label class="flbl">Datum</label><input class="fi" id="quick-datum" type="date"></div>
+      </div>
+      <button class="btn btn-p" style="width:100%" onclick="quickSave()">✓ Eintrag speichern</button>
+    </div>
+  </div>
+</div>
+<div class="sec-head">
+  <div><div class="sec-title">Alle Lerneinträge</div><div class="sec-sub" id="lernen-count">Lade...</div></div>
+</div>
+<div id="lernen-list"></div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/lernen.js"></script>{% endblock %}

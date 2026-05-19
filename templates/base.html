@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>StudyFlow{% if active_page %} – {{ active_page|capitalize }}{% endif %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="{% if active_page %}app-page{% else %}land-page{% endif %}">
+
+<!-- ══ SVG ICON DEFS (wiederverwendbar) ═══════════════════════════════════ -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="ic-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+  <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="ic-undo" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="ic-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></symbol>
+  <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+  <symbol id="ic-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+  <symbol id="ic-note" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></symbol>
+  <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+  <symbol id="ic-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+  <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="ic-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+  <symbol id="ic-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+  <symbol id="ic-percent" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></symbol>
+</svg>
+
+<!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
+
+<!-- LOGIN -->
+<div class="overlay" id="modal-login" onclick="closeModalOutside(event,'modal-login')">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="closeModal('login')" title="Schliessen"><svg><use href="#ic-x"/></svg></button>
+    <h2><svg><use href="#ic-note"/></svg> Willkommen zurück</h2>
+    <p class="modal-sub">Melde dich an um weiterzumachen</p>
+    <div class="fg"><label class="flbl">Benutzername</label><input class="fi" id="login-user" type="text" placeholder="admin" autocomplete="username"></div>
+    <div class="fg"><label class="flbl">Passwort</label><input class="fi" id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div id="login-err" class="ferr" style="display:none"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="doLogin()">Anmelden</button>
+      <button class="btn btn-s" onclick="closeModal('login');openModal('register')">Registrieren</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="overlay" id="modal-register" onclick="closeModalOutside(event,'modal-register')">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="closeModal('register')" title="Schliessen"><svg><use href="#ic-x"/></svg></button>
+    <h2><svg><use href="#ic-plus"/></svg> Konto erstellen</h2>
+    <p class="modal-sub">Kostenlos registrieren und loslegen</p>
+    <div class="fg"><label class="flbl">Benutzername *</label><input class="fi" id="reg-user" type="text" placeholder="Dein Benutzername" autocomplete="username"></div>
+    <div class="fg"><label class="flbl">E-Mail (optional)</label><input class="fi" id="reg-email" type="email" placeholder="name@beispiel.ch"></div>
+    <div class="fg"><label class="flbl">Passwort *</label><input class="fi" id="reg-pw" type="password" placeholder="Min. 6 Zeichen" autocomplete="new-password"></div>
+    <div id="reg-err" class="ferr" style="display:none"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="doRegister()">Konto erstellen</button>
+      <button class="btn btn-s" onclick="closeModal('register');openModal('login')">Anmelden</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTE -->
+<div class="overlay" id="modal-note" onclick="closeModalOutside(event,'modal-note')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('note')" title="Schliessen"><svg><use href="#ic-x"/></svg></button>
+    <h2 id="modal-note-title"><svg><use href="#ic-note"/></svg> Note hinzufügen</h2>
+    <p class="modal-sub">Trage eine Note in dein Fach ein</p>
+    <input type="hidden" id="note-edit-id">
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="note-fach" onchange="loadThemenNote()"></select></div>
+    <!-- Thema mit Suche -->
+    <div class="fg">
+      <label class="flbl">Thema</label>
+      <div class="sel-search-wrap" id="note-thema-wrap">
+        <span class="sel-search-icon"><svg><use href="#ic-search"/></svg></span>
+        <input class="sel-search-input" id="note-thema-search" type="text" placeholder="Thema suchen oder neu erstellen..." autocomplete="off"
+          oninput="filterThemaDropdown()" onfocus="openThemaDropdown()" onkeydown="themaSearchKeydown(event)">
+        <input type="hidden" id="note-thema-id">
+        <div class="sel-dropdown" id="note-thema-dropdown"></div>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg">
+        <label class="flbl">Note</label>
+        <input class="fi" id="note-val" type="number" min="1" max="6" step="0.25" placeholder="5.5">
+      </div>
+      <div class="fg">
+        <label class="flbl" style="display:flex;align-items:center;gap:4px">
+          <svg width="12" height="12" style="stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-percent"/></svg>
+          Gewichtung
+        </label>
+        <input class="fi" id="note-gewichtung" type="number" min="0.01" max="10" step="0.01" placeholder="1.0" value="1.0">
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">Semester</label>
+      <select class="fi" id="note-sem"></select>
+    </div>
+    <div class="fg"><label class="flbl">Datum</label><input class="fi" id="note-datum" type="date"></div>
+    <div id="note-err" class="ferr" style="display:none"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveNote()">Speichern</button>
+      <button class="btn btn-s" onclick="closeModal('note')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- LERNEN -->
+<div class="overlay" id="modal-lernen" onclick="closeModalOutside(event,'modal-lernen')">
+  <div class="modal modal-lg">
+    <button class="modal-close" onclick="closeModal('lernen')" title="Schliessen"><svg><use href="#ic-x"/></svg></button>
+    <h2 id="lernen-modal-title"><svg><use href="#ic-clock"/></svg> Lerneintrag</h2>
+    <p class="modal-sub">Füge eine Lerneinheit hinzu</p>
+    <input type="hidden" id="lernen-edit-id">
+    <div class="frow">
+      <div class="fg"><label class="flbl">Fach *</label><select class="fi" id="lernen-fach" onchange="loadThemenLernen()"></select></div>
+      <div class="fg"><label class="flbl">Methode</label><select class="fi" id="lernen-methode"></select></div>
+    </div>
+    <div class="fg"><label class="flbl">Thema wählen</label>
+      <select class="fi" id="lernen-thema-sel" onchange="applyThemaLernen()"><option value="">— Thema auswählen —</option></select>
+    </div>
+    <div class="fg"><label class="flbl">Titel *</label><input class="fi" id="lernen-titel" type="text" placeholder="Was hast du gemacht?"></div>
+    <div class="fg"><label class="flbl">Beschreibung</label><textarea class="fi" id="lernen-desc" placeholder="Optionale Notizen..."></textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Dauer (Min) *</label><input class="fi" id="lernen-dauer" type="number" min="1" placeholder="45"></div>
+      <div class="fg"><label class="flbl">Datum</label><input class="fi" id="lernen-datum" type="date"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveLerneintrag()">Speichern</button>
+      <button class="btn btn-s" onclick="closeModal('lernen')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- THEMEN (Modal, nur noch via Einstellungen gebraucht) -->
+<div class="overlay" id="modal-themen" onclick="closeModalOutside(event,'modal-themen')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('themen')" title="Schliessen"><svg><use href="#ic-x"/></svg></button>
+    <h2><svg><use href="#ic-tag"/></svg> Themen verwalten</h2>
+    <p class="modal-sub">Themen pro Fach hinzufügen und verwalten</p>
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="thema-fach" onchange="renderThemenList()"></select></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input class="fi" id="thema-name" placeholder="Neues Thema..." style="flex:1">
+      <button class="btn btn-p btn-sm" onclick="addThema()">
+        <svg width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-plus"/></svg>
+        Hinzufügen
+      </button>
+    </div>
+    <div id="themen-list" style="max-height:260px;overflow-y:auto"></div>
+    <button class="btn btn-s" style="width:100%;margin-top:14px" onclick="closeModal('themen')">Schliessen</button>
+  </div>
+</div>
+
+<!-- FACH -->
+<div class="overlay" id="modal-fach" onclick="closeModalOutside(event,'modal-fach')">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="closeModal('fach')" title="Schliessen"><svg><use href="#ic-x"/></svg></button>
+    <h2><svg><use href="#ic-plus"/></svg> Fach hinzufügen</h2>
+    <p class="modal-sub">Neues Schulfach erstellen</p>
+    <div class="fg"><label class="flbl">Fachname</label><input class="fi" id="new-fach-name" type="text" placeholder="z.B. Chemie"></div>
+    <div class="fg"><label class="flbl">Farbe</label><div class="cdots" id="fach-cdots"></div></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveFach()">Hinzufügen</button>
+      <button class="btn btn-s" onclick="closeModal('fach')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- METHODE -->
+<div class="overlay" id="modal-methode" onclick="closeModalOutside(event,'modal-methode')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('methode')" title="Schliessen"><svg><use href="#ic-x"/></svg></button>
+    <h2><svg><use href="#ic-zap"/></svg> Eigene Methode</h2>
+    <p class="modal-sub">Füge deine persönliche Lernmethode hinzu</p>
+    <div class="fg"><label class="flbl">Name</label><input class="fi" id="m-name" type="text" placeholder="z.B. Mind Maps"></div>
+    <div class="fg"><label class="flbl">Beschreibung</label><textarea class="fi" id="m-desc" placeholder="Wie funktioniert diese Methode?"></textarea></div>
+    <div class="fg"><label class="flbl">Empfehlung (Fächer)</label><input class="fi" id="m-empf" type="text" placeholder="z.B. Biologie, Geschichte"></div>
+    <div class="fg"><label class="flbl">Farbe</label><div class="cdots" id="methode-cdots"></div></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveMethode()">Speichern</button>
+      <button class="btn btn-s" onclick="closeModal('methode')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT -->
+<div class="overlay" id="modal-event" onclick="closeModalOutside(event,'modal-event')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('event')" title="Schliessen"><svg><use href="#ic-x"/></svg></button>
+    <h2><svg><use href="#ic-calendar"/></svg> Termin planen</h2>
+    <p class="modal-sub">Plane eine Lerneinheit im Kalender</p>
+    <div class="fg"><label class="flbl">Titel</label><input class="fi" id="event-titel" placeholder="z.B. Mathe lernen"></div>
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="event-fach"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Datum</label><input class="fi" id="event-datum" type="date"></div>
+      <div class="fg"><label class="flbl">Uhrzeit</label><input class="fi" id="event-start" type="time"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveEvent()">Planen</button>
+      <button class="btn btn-s" onclick="closeModal('event')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-logo">
+        <div class="logo-mark">📚</div>StudyFlow
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Haupt</div>
+        <a class="nav-item {% if active_page == 'dashboard' %}active{% endif %}" href="/dashboard">
+          <div class="nav-icon"><svg><use href="#ic-home"/></svg></div>Übersicht
+        </a>
+        <a class="nav-item {% if active_page == 'noten' %}active{% endif %}" href="/noten">
+          <div class="nav-icon"><svg><use href="#ic-note"/></svg></div>Noten
+        </a>
+        <a class="nav-item {% if active_page == 'lernen' %}active{% endif %}" href="/lernen">
+          <div class="nav-icon"><svg><use href="#ic-clock"/></svg></div>Lernen
+        </a>
+        <a class="nav-item {% if active_page == 'kalender' %}active{% endif %}" href="/kalender">
+          <div class="nav-icon"><svg><use href="#ic-calendar"/></svg></div>Planung
+        </a>
+        <div class="nav-section-label">Analyse</div>
+        <a class="nav-item {% if active_page == 'statistiken' %}active{% endif %}" href="/statistiken">
+          <div class="nav-icon"><svg><use href="#ic-chart"/></svg></div>Statistiken
+        </a>
+        <a class="nav-item {% if active_page == 'methoden' %}active{% endif %}" href="/methoden">
+          <div class="nav-icon"><svg><use href="#ic-zap"/></svg></div>Lernmethoden
+        </a>
+        <div class="nav-section-label">Konto</div>
+        <a class="nav-item {% if active_page == 'einstellungen' %}active{% endif %}" href="/einstellungen">
+          <div class="nav-icon"><svg><use href="#ic-settings"/></svg></div>Einstellungen
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="user-av" id="sidebar-uav">A</div>
+          <div>
+            <div class="user-name" id="sidebar-uname">Benutzer</div>
+            <div class="user-sub">Eingeloggt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="burger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+        <h1 class="topbar-title">{% block page_title %}Übersicht{% endblock %}</h1>
+      </div>
+      <div class="topbar-right">
+        {% block topbar_actions %}{% endblock %}
+        <!-- Theme Slider -->
+        <div class="theme-switch" onclick="toggleTheme()" title="Dark/Light Mode">
+          <span class="theme-switch-icon" id="theme-icon-moon"><svg width="14" height="14" style="stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-moon"/></svg></span>
+          <div class="theme-switch-track" id="theme-track">
+            <div class="theme-switch-knob"></div>
+          </div>
+          <span class="theme-switch-icon" id="theme-icon-sun"><svg width="14" height="14" style="stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-sun"/></svg></span>
+        </div>
+      </div>
+    </div>
+    <div class="page-content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+<!-- ══ LANDING ════════════════════════════════════════════════════════════ -->
+<div id="landing">
+  <nav class="land-nav">
+    <div class="land-logo"><div class="logo-mark">📚</div>StudyFlow</div>
+    <div class="land-actions">
+      <div class="theme-switch" onclick="toggleTheme()" title="Dark/Light Mode">
+        <span class="theme-switch-icon"><svg width="14" height="14" style="stroke:#CDD6F4;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-moon"/></svg></span>
+        <div class="theme-switch-track" id="theme-track-land">
+          <div class="theme-switch-knob"></div>
+        </div>
+        <span class="theme-switch-icon"><svg width="14" height="14" style="stroke:#CDD6F4;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-sun"/></svg></span>
+      </div>
+    </div>
+  </nav>
+  <div class="hero">
+    <div class="hero-eyebrow">✦ IDPA — Berufsmatura Lernplattform</div>
+    <h1>Lerne <em>smarter</em>,<br>nicht härter.</h1>
+    <p>Lernzeit tracken, Noten verwalten und Fortschritt mit coolen Grafiken sichtbar machen.</p>
+    <div class="hero-center-btns">
+      <button class="btn btn-p btn-lg" onclick="openModal('register')">Jetzt starten →</button>
+      <button class="btn btn-s btn-lg" onclick="openModal('login')">Ich hab schon ein Konto</button>
+    </div>
+    <div class="feat-strip">
+      <div class="feat-chip"><span>⏱️</span> Timer & Einträge</div>
+      <div class="feat-chip"><span>📊</span> 5 Diagramme</div>
+      <div class="feat-chip"><span>📅</span> Drag & Drop Kalender</div>
+      <div class="feat-chip"><span>📝</span> Noten & Durchschnitte</div>
+      <div class="feat-chip"><span>🌙</span> Dark Mode</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══════════════════════════════════════════════════════════════ -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script src="/static/js/core.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

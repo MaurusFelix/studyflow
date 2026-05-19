@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen{% endblock %}
+{% block page_title %}Einstellungen{% endblock %}
+{% block content %}
+<div class="settings-wrap">
+
+  <!-- Profil -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Profil</div>
+    <div class="settings-row" style="gap:16px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="position:relative">
+          <div id="profile-pic" style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#1E1E2E;overflow:hidden;cursor:pointer" onclick="document.getElementById('pic-input').click()">
+            <span id="profile-initials">?</span>
+            <img id="profile-img" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0" src="">
+          </div>
+          <input type="file" id="pic-input" accept="image/*" style="display:none" onchange="uploadProfilePic(event)">
+          <div style="position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--surface)" onclick="document.getElementById('pic-input').click()">
+            <svg width="10" height="10" style="stroke:#1E1E2E;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-edit"/></svg>
+          </div>
+        </div>
+        <div>
+          <div class="settings-lbl" id="settings-uname">Benutzername</div>
+          <div class="settings-sub">Klicke auf das Bild um es zu ändern</div>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-xs" onclick="removeProfilePic()">Bild entfernen</button>
+    </div>
+  </div>
+
+  <!-- Darstellung -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Darstellung</div>
+    <div class="settings-row">
+      <div><div class="settings-lbl">Dark Mode</div><div class="settings-sub">Catppuccin Mocha / Latte</div></div>
+      <label class="toggle"><input type="checkbox" id="toggle-dark" onchange="toggleTheme()"><span class="toggle-slider"></span></label>
+    </div>
+  </div>
+
+  <!-- Semester -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Semester</div>
+    <div id="settings-semester" style="margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <input class="fi" id="settings-semester-new" placeholder="z.B. HS 2024 / Semester 1" style="flex:1;padding:8px 12px"
+        onkeydown="if(event.key==='Enter'){addSemester(this.value);this.value=''}">
+      <button class="btn btn-p btn-sm" onclick="addSemester(document.getElementById('settings-semester-new').value);document.getElementById('settings-semester-new').value=''">
+        <svg width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-plus"/></svg>
+        Hinzufügen
+      </button>
+    </div>
+  </div>
+
+  <!-- Fächer -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Fächer verwalten</div>
+    <div id="settings-faecher"></div>
+    <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="openAddFach()">
+      <svg width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-plus"/></svg>
+      Neues Fach hinzufügen
+    </button>
+  </div>
+
+  <!-- Themen -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Themen verwalten</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <select class="fi" id="settings-thema-fach" onchange="renderSettingsThemen()" style="flex:1;padding:8px 12px"></select>
+    </div>
+    <div id="settings-themen" style="margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <input class="fi" id="settings-thema-new" placeholder="Neues Thema..." style="flex:1;padding:8px 12px"
+        onkeydown="if(event.key==='Enter')settingsAddThema()">
+      <button class="btn btn-p btn-sm" onclick="settingsAddThema()">
+        <svg width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-plus"/></svg>
+        Hinzufügen
+      </button>
+    </div>
+  </div>
+
+  <!-- Konto -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Konto</div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-lbl">Abmelden</div>
+        <div class="settings-sub">Von diesem Gerät abmelden</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="doLogout()">
+        <svg width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><use href="#ic-logout"/></svg>
+        Abmelden
+      </button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/einstellungen.js"></script>
+{% endblock %}
