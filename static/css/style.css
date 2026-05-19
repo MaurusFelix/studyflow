@@ -167,6 +167,7 @@ a{text-decoration:none;color:inherit}
 }
 .land-logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.2rem;letter-spacing:-.01em;color:#CDD6F4}
 [data-theme="light"] .land-logo{color:var(--text)}
+[data-theme="light"] .land-nav { border-bottom-color:rgba(114,135,253,.2); }
 .land-actions{display:flex;gap:10px;align-items:center}
 .hero{
   flex:1;display:flex;flex-direction:column;align-items:center;
