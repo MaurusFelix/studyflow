@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen{% endblock %}
+{% block page_title %}Einstellungen{% endblock %}
+{% block content %}
+<div class="settings-wrap">
+
+  <!-- Profilbild + Benutzername -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Profil</div>
+    <div class="settings-row" style="gap:16px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="position:relative">
+          <div id="profile-pic" style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;overflow:hidden;cursor:pointer" onclick="document.getElementById('pic-input').click()">
+            <span id="profile-initials">?</span>
+            <img id="profile-img" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0" src="">
+          </div>
+          <input type="file" id="pic-input" accept="image/*" style="display:none" onchange="uploadProfilePic(event)">
+          <div style="position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;cursor:pointer;border:2px solid var(--surface)" onclick="document.getElementById('pic-input').click()">✎</div>
+        </div>
+        <div>
+          <div class="settings-lbl" id="settings-uname">Benutzername</div>
+          <div class="settings-sub">Klicke auf das Bild um es zu ändern</div>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-xs" onclick="removeProfilePic()">Bild entfernen</button>
+    </div>
+  </div>
+
+  <!-- Darstellung -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Darstellung</div>
+    <div class="settings-row">
+      <div><div class="settings-lbl">Dark Mode</div><div class="settings-sub">Dunkles Design aktivieren</div></div>
+      <label class="toggle"><input type="checkbox" id="toggle-dark" onchange="toggleTheme()"><span class="toggle-slider"></span></label>
+    </div>
+  </div>
+
+  <!-- Fächer -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Fächer verwalten</div>
+    <div id="settings-faecher"></div>
+    <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="openAddFach()">+ Neues Fach hinzufügen</button>
+  </div>
+
+  <!-- Themen -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Themen verwalten</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <select class="fi" id="settings-thema-fach" onchange="renderSettingsThemen()" style="flex:1;padding:8px 12px"></select>
+    </div>
+    <div id="settings-themen" style="margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <input class="fi" id="settings-thema-new" placeholder="Neues Thema..." style="flex:1;padding:8px 12px"
+        onkeydown="if(event.key==='Enter')settingsAddThema()">
+      <button class="btn btn-p btn-sm" onclick="settingsAddThema()">+ Hinzufügen</button>
+    </div>
+  </div>
+
+  <!-- Konto -->
+  <div class="settings-sec">
+    <div class="settings-sec-lbl">Konto</div>
+    <div class="settings-row">
+      <div><div class="settings-lbl">Abmelden</div><div class="settings-sub">Von diesem Gerät abmelden</div></div>
+      <button class="btn btn-danger btn-sm" onclick="doLogout()">Abmelden</button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/einstellungen.js"></script>
+<script>
+// Fill thema-fach dropdown and profile pic after SF loads
+const _origInit = typeof initPageScript === 'function' ? initPageScript : null;
+function initPageScript() {
+  if (_origInit) _origInit();
+  // Fill fach dropdown for themen
+  const sel = document.getElementById('settings-thema-fach');
+  if (sel && SF.faecher.length) {
+    sel.innerHTML = SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+    renderSettingsThemen();
+  }
+  // Load profile pic
+  const saved = localStorage.getItem('sf-pic');
+  const initEl = document.getElementById('profile-initials');
+  const imgEl = document.getElementById('profile-img');
+  if (initEl && SF.user) initEl.textContent = SF.user.username[0].toUpperCase();
+  if (saved && imgEl) { imgEl.src = saved; imgEl.style.display = 'block'; if(initEl) initEl.style.display='none'; }
+}
+function uploadProfilePic(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const data = ev.target.result;
+    localStorage.setItem('sf-pic', data);
+    document.getElementById('profile-img').src = data;
+    document.getElementById('profile-img').style.display = 'block';
+    document.getElementById('profile-initials').style.display = 'none';
+    // Also update sidebar avatar
+    const sav = document.getElementById('sidebar-uav');
+    if (sav) { sav.innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`; }
+    toast('✅ Profilbild gespeichert', 'ok');
+  };
+  reader.readAsDataURL(file);
+}
+function removeProfilePic() {
+  localStorage.removeItem('sf-pic');
+  document.getElementById('profile-img').style.display = 'none';
+  document.getElementById('profile-initials').style.display = 'block';
+  toast('Profilbild entfernt', 'ok');
+}
+</script>
+{% endblock %}

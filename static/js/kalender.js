@@ -101,7 +101,7 @@ function renderUpcoming() {
             <div class="entry-title">${e.titel}</div>
             <div class="entry-meta">${fmtDate(e.datum)}${e.uhrzeit_start?' · '+e.uhrzeit_start.slice(0,5):''}${fach?' · '+fach.name:''}</div>
           </div>
-          iconBtn('ic-trash', `delEvent(${e.id})`, 'Löschen', 'btn-icon-danger')
+          <button class="btn-icon" onclick="delEvent(${e.id})">🗑️</button>
         </div>`;
       }).join('')
     : emptyHTML('📅', 'Keine bevorstehenden Termine', 'Klick auf einen Kalendertag um einen Termin zu planen');

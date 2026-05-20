@@ -1,46 +1,70 @@
 /* ═══════════════════════════════════════════════════════
-   StudyFlow v4 — core.js
+   StudyFlow v3 — core.js
+   Globaler State + API + Helpers (alle Seiten laden dies)
 ═══════════════════════════════════════════════════════ */
 
+/* ── GLOBALER STATE ───────────────────────────────────── */
 const SF = {
   user: null,
   faecher: [], noten: [], methoden: [],
   eintraege: [], themen: [], kalender: [],
-  semester: [],
-  charts: {}, selColor: '#CBA6F7', selMethodeColor: '#CBA6F7',
+  charts: {}, selColor: '#EF4444',
 };
 
-/* ── API ──────────────────────────────────────────────── */
+/* ── API HELPER ───────────────────────────────────────── */
 async function api(method, path, data) {
   const o = { method, credentials: 'include', headers: { 'Content-Type': 'application/json' } };
   if (data) o.body = JSON.stringify(data);
   try { const r = await fetch('/api' + path, o); return r.json(); } catch { return {}; }
 }
 
-/* ── INIT ─────────────────────────────────────────────── */
+/* ── INIT (läuft auf jeder Seite) ─────────────────────── */
 async function init() {
+  // CSS handles landing vs app visibility via body.land-page / body.app-page
+  // Only load data if we're on an app page (Flask already redirects if not logged in)
   const isAppPage = document.body.classList.contains('app-page');
-  if (!isAppPage) return;
+  if (!isAppPage) return; // Landing page — nothing to load
+
   const me = await api('GET', '/me');
-  if (!me.logged_in) { window.location.href = '/'; return; }
+  if (!me.logged_in) {
+    window.location.href = '/';
+    return;
+  }
   SF.user = me;
   const av = document.getElementById('sidebar-uav');
   const un = document.getElementById('sidebar-uname');
+  const su = document.getElementById('settings-uname');
   const savedPic = localStorage.getItem('sf-pic');
   if (av) {
     if (savedPic) av.innerHTML = `<img src="${savedPic}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`;
     else av.textContent = me.username[0].toUpperCase();
   }
   if (un) un.textContent = me.username;
+  if (su) su.textContent = me.username;
   await loadAll();
   if (typeof initPageScript === 'function') initPageScript();
 }
 
+function showLanding() {
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+function showApp() {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  const u = SF.user.username;
+  const av = document.getElementById('sidebar-uav');
+  const un = document.getElementById('sidebar-uname');
+  const su = document.getElementById('settings-uname');
+  if (av) av.textContent = u[0].toUpperCase();
+  if (un) un.textContent = u;
+  if (su) su.textContent = u;
+}
+
 async function loadAll() {
-  const [f, n, m, l, t, k, s] = await Promise.all([
+  const [f, n, m, l, t, k] = await Promise.all([
     api('GET', '/faecher'), api('GET', '/noten'), api('GET', '/lernmethoden'),
-    api('GET', '/lerneintraege'), api('GET', '/themen'), api('GET', '/kalender'),
-    api('GET', '/semester')
+    api('GET', '/lerneintraege'), api('GET', '/themen'), api('GET', '/kalender')
   ]);
   SF.faecher   = Array.isArray(f) ? f : [];
   SF.noten     = Array.isArray(n) ? n : [];
@@ -48,13 +72,11 @@ async function loadAll() {
   SF.eintraege = Array.isArray(l) ? l : [];
   SF.themen    = Array.isArray(t) ? t : [];
   SF.kalender  = Array.isArray(k) ? k : [];
-  SF.semester  = Array.isArray(s) ? s : [];
   fillFachDrops();
   fillMethodeDrops();
-  fillSemesterDrops();
 }
 
-/* ── AUTH ─────────────────────────────────────────────── */
+/* ── LOGIN / REGISTER / LOGOUT ────────────────────────── */
 async function doLogin() {
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pw').value;
@@ -62,6 +84,7 @@ async function doLogin() {
   if (!u || !p) { showErr(err, 'Bitte beide Felder ausfüllen'); return; }
   const r = await api('POST', '/login', { username: u, password: p });
   if (r.success) {
+    // Felder leeren
     document.getElementById('login-user').value = '';
     document.getElementById('login-pw').value = '';
     window.location.href = '/dashboard';
@@ -79,6 +102,7 @@ async function doRegister() {
   if (p.length < 6) { showErr(err, 'Passwort muss mind. 6 Zeichen haben'); return; }
   const r = await api('POST', '/register', { username: u, email: e, password: p });
   if (r.success) {
+    // Felder leeren
     document.getElementById('reg-user').value = '';
     document.getElementById('reg-email').value = '';
     document.getElementById('reg-pw').value = '';
@@ -95,24 +119,23 @@ async function doLogout() {
 
 /* ── THEME ────────────────────────────────────────────── */
 function applyTheme() {
-  const dark = localStorage.getItem('sf-dark') !== '0'; // default dark
+  const dark = localStorage.getItem('sf-dark') === '1';
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  ['theme-track','theme-track-land'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('active', !dark); // active = light mode
-  });
+  const tb = document.getElementById('theme-btn');
+  if (tb) tb.textContent = dark ? '☀️' : '🌙';
+  const td = document.getElementById('toggle-dark');
+  if (td) td.checked = dark;
 }
 function toggleTheme() {
   const cur = document.documentElement.getAttribute('data-theme') === 'dark';
   const next = !cur;
   document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light');
   localStorage.setItem('sf-dark', next ? '1' : '0');
-  ['theme-track','theme-track-land'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('active', !next);
-  });
+  const tb = document.getElementById('theme-btn');
+  if (tb) tb.textContent = next ? '☀️' : '🌙';
   const td = document.getElementById('toggle-dark');
   if (td) td.checked = next;
+  // Re-render charts to pick up new colors
   Object.values(SF.charts).forEach(c => { try { c.destroy(); } catch {} });
   SF.charts = {};
   if (typeof initPageScript === 'function') initPageScript();
@@ -124,7 +147,7 @@ function toggleSidebar() { document.getElementById('sidebar').classList.toggle('
 /* ── MODAL ────────────────────────────────────────────── */
 function openModal(name) {
   const el = document.getElementById('modal-' + name);
-  if (el) { el.classList.add('open'); setTimeout(() => el.querySelector('input,select')?.focus(), 80); }
+  if (el) { el.classList.add('open'); el.querySelector('input,select')?.focus(); }
 }
 function closeModal(name) {
   const el = document.getElementById('modal-' + name);
@@ -155,15 +178,12 @@ function fmtDate(d) {
 function fmtMin(m) {
   if (!m) return '0 Min.';
   if (m < 60) return m + ' Min.';
-  const h = Math.floor(m / 60);
-  const min = m % 60;
-  if (min === 0) return h + ' Std.';
-  return h + ' Std. ' + min + ' Min.';
+  return Math.floor(m / 60) + 'h ' + (m % 60 ? (m % 60) + 'm' : '');
 }
 function getCS(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function setTodayDates() {
   const t = new Date().toISOString().split('T')[0];
-  ['note-datum','lernen-datum','quick-datum','event-datum'].forEach(id => {
+  ['note-datum', 'lernen-datum', 'quick-datum', 'event-datum'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = t;
   });
 }
@@ -173,20 +193,16 @@ function destroyChart(id) {
 function emptyHTML(icon, title, sub) {
   return `<div class="empty"><div class="empty-icon">${icon}</div><h3>${title}</h3><p>${sub}</p></div>`;
 }
-function iconBtn(iconId, onclick, title='', extraClass='') {
-  return `<button class="btn-icon ${extraClass}" onclick="${onclick}" title="${title}">
-    <svg><use href="#${iconId}"/></svg>
-  </button>`;
-}
 function entryHTML(e, showActions) {
+  // Use embedded fach_name/fach_farbe if available (from JOIN), fallback to SF.faecher
   const fach = SF.faecher.find(f => f.id === e.fach_id) || {};
   const fname = e.fach_name || fach.name || 'Unbekannt';
   const ffarbe = e.fach_farbe || fach.farbe || '#999';
   const meth = SF.methoden.find(m => m.id === e.methode_id);
   const actions = showActions ? `
     <div class="entry-actions">
-      ${iconBtn('ic-edit', `openEditLernen(${e.id})`, 'Bearbeiten')}
-      ${iconBtn('ic-trash', `delEintrag(${e.id})`, 'Löschen', 'btn-icon-danger')}
+      <button class="btn-icon" onclick="openEditLernen(${e.id})">✏️</button>
+      <button class="btn-icon" onclick="delEintrag(${e.id})">🗑️</button>
     </div>` : '';
   return `<div class="entry-item">
     <div class="entry-dot" style="background:${ffarbe}"></div>
@@ -214,16 +230,17 @@ function chOpts(label) {
   };
 }
 
-/* ── DROPDOWNS ────────────────────────────────────────── */
+/* ── FACH DROPDOWNS ───────────────────────────────────── */
 function fillFachDrops() {
   const opts = SF.faecher.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
   const optsBlank = '<option value="">Kein Fach</option>' + opts;
-  ['note-fach','lernen-fach','quick-fach','thema-fach','settings-thema-fach'].forEach(id => {
+  ['note-fach','lernen-fach','quick-fach','thema-fach'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = opts || '<option value="">— Kein Fach —</option>';
   });
   const ef = document.getElementById('event-fach');
   if (ef) ef.innerHTML = optsBlank;
+  // Timer
   const tf = document.getElementById('timer-fach');
   if (tf) tf.innerHTML = opts;
   updateTimerFachLabel?.();
@@ -233,124 +250,21 @@ function fillMethodeDrops() {
   const el = document.getElementById('lernen-methode');
   if (el) el.innerHTML = '<option value="">— Methode —</option>' + opts;
 }
-function fillSemesterDrops() {
-  const opts = SF.semester.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-  const el = document.getElementById('note-sem');
-  if (el) el.innerHTML = '<option value="">— Semester —</option>' + opts;
-  if (typeof renderSettings === 'function') renderSemesterSettings?.();
-}
-
-/* ── THEMA SEARCH DROPDOWN (Note-Modal) ───────────────── */
-let _themaDropFachId = null;
-
-function loadThemenNote() {
-  const fid = +document.getElementById('note-fach')?.value;
-  _themaDropFachId = fid;
-  document.getElementById('note-thema-id').value = '';
-  document.getElementById('note-thema-search').value = '';
-  renderThemaDropdown('');
-}
-
-function renderThemaDropdown(filter) {
-  const fid = _themaDropFachId || +document.getElementById('note-fach')?.value;
-  const dd = document.getElementById('note-thema-dropdown');
-  if (!dd) return;
-  const search = filter.toLowerCase().trim();
-  let themen = SF.themen.filter(t => t.fach_id === fid);
-  if (search) themen = themen.filter(t => t.name.toLowerCase().includes(search));
-
-  let html = '';
-  if (themen.length === 0 && !search) {
-    html = `<div class="sel-option sel-option-empty">Noch keine Themen für dieses Fach</div>`;
-  } else {
-    html = themen.map(t => {
-      const selId = document.getElementById('note-thema-id')?.value;
-      const isSel = +selId === t.id;
-      return `<div class="sel-option ${isSel?'selected':''}" onclick="selectThema(${t.id},'${t.name.replace(/'/g,'\\'')}')">
-        <svg width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><use href="#ic-tag"/></svg>
-        ${t.name}
-      </div>`;
-    }).join('');
-  }
-  // "Neu erstellen"-Option
-  if (search && !themen.find(t => t.name.toLowerCase() === search)) {
-    html += `<div class="sel-option sel-option-new" onclick="createAndSelectThema('${filter.replace(/'/g,'\\'')}')">
-      <svg width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><use href="#ic-plus"/></svg>
-      «${filter}» als neues Thema erstellen
-    </div>`;
-  }
-  if (!html) html = `<div class="sel-option sel-option-empty">Keine Übereinstimmungen</div>`;
-  dd.innerHTML = html;
-}
-
-function filterThemaDropdown() {
-  const val = document.getElementById('note-thema-search').value;
-  renderThemaDropdown(val);
-  // Clear selection if text changed
-  if (val === '') document.getElementById('note-thema-id').value = '';
-}
-
-function openThemaDropdown() {
-  loadThemenNote();
-  document.getElementById('note-thema-dropdown').classList.add('open');
-}
-
-function closeThemaDropdown() {
-  document.getElementById('note-thema-dropdown')?.classList.remove('open');
-}
-
-function selectThema(id, name) {
-  document.getElementById('note-thema-id').value = id;
-  document.getElementById('note-thema-search').value = name;
-  closeThemaDropdown();
-}
-
-async function createAndSelectThema(name) {
-  const fid = _themaDropFachId || +document.getElementById('note-fach')?.value;
-  if (!fid || !name.trim()) return;
-  const r = await api('POST', '/themen', { fach_id: fid, name: name.trim() });
-  if (r.id) {
-    SF.themen.push(r);
-    selectThema(r.id, r.name);
-    toast('Thema erstellt', 'ok');
-  }
-}
-
-function themaSearchKeydown(e) {
-  const dd = document.getElementById('note-thema-dropdown');
-  const items = dd?.querySelectorAll('.sel-option:not(.sel-option-empty)');
-  if (e.key === 'Escape') { closeThemaDropdown(); return; }
-  if (e.key === 'Enter' && items?.length) { items[0].click(); return; }
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('note-thema-wrap');
-  if (wrap && !wrap.contains(e.target)) closeThemaDropdown();
-});
 
 /* ── FACH MODAL ───────────────────────────────────────── */
-const PRESET_COLORS = ['#F38BA8','#FAB387','#F9E2AF','#A6E3A1','#94E2D5','#89DCEB','#89B4FA','#CBA6F7','#F5C2E7','#EBA0AC'];
-function buildColorDots(containerId = 'fach-cdots', currentColor = null) {
-  const el = document.getElementById(containerId);
+const PRESET_COLORS = ['#EF4444','#3B82F6','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#84CC16','#F97316','#6366F1'];
+function buildColorDots() {
+  const el = document.getElementById('fach-cdots');
   if (!el) return;
-  const active = currentColor || SF.selColor;
   el.innerHTML = PRESET_COLORS.map(c =>
-    `<div class="cdot${c===active?' sel':''}" style="background:${c}" onclick="selColorFor('${containerId}','${c}')"></div>`
+    `<div class="cdot${c===SF.selColor?' sel':''}" style="background:${c}" onclick="selColor('${c}')"></div>`
   ).join('');
 }
-function selColorFor(containerId, c) {
-  if (containerId === 'methode-cdots') SF.selMethodeColor = c;
-  else SF.selColor = c;
-  document.querySelectorAll(`#${containerId} .cdot`).forEach(d =>
-    d.classList.toggle('sel', d.style.background === c || d.style.backgroundColor === c)
-  );
+function selColor(c) {
+  SF.selColor = c;
+  document.querySelectorAll('.cdot').forEach(d => d.classList.toggle('sel', d.style.background === c || d.style.backgroundColor === c));
 }
-// Legacy
-function buildColorDots_legacy() { buildColorDots('fach-cdots'); }
-function selColor(c) { selColorFor('fach-cdots', c); }
-
-function openAddFach() { buildColorDots('fach-cdots'); openModal('fach'); }
+function openAddFach() { buildColorDots(); openModal('fach'); }
 async function saveFach() {
   const name = document.getElementById('new-fach-name').value.trim();
   if (!name) { toast('Bitte Fachname eingeben', 'err'); return; }
@@ -360,10 +274,12 @@ async function saveFach() {
     fillFachDrops();
     document.getElementById('new-fach-name').value = '';
     closeModal('fach');
-    toast('Fach "' + name + '" hinzugefügt', 'ok');
+    toast('✅ Fach "' + name + '" hinzugefügt', 'ok');
     if (typeof renderNoten === 'function') renderNoten();
-    if (typeof renderSettingsFaecher === 'function') renderSettingsFaecher();
-  } else { toast('Fehler beim Speichern', 'err'); }
+    if (typeof renderSettings === 'function') renderSettings();
+  } else {
+    toast('Fehler beim Speichern', 'err');
+  }
 }
 async function delFach(fid) {
   if (!confirm('Fach und alle Noten/Einträge dazu löschen?')) return;
@@ -372,82 +288,53 @@ async function delFach(fid) {
   fillFachDrops();
   toast('Fach gelöscht', 'ok');
   if (typeof renderNoten === 'function') renderNoten();
-  if (typeof renderSettingsFaecher === 'function') renderSettingsFaecher();
-}
-async function renameFach(fid) {
-  const f = SF.faecher.find(x => x.id === fid);
-  if (!f) return;
-  const name = prompt('Fachname:', f.name);
-  if (!name || name === f.name) return;
-  const r = await api('PUT', '/faecher/' + fid, { name, farbe: f.farbe });
-  if (r.success) {
-    f.name = name;
-    fillFachDrops();
-    toast('Fach umbenannt', 'ok');
-    if (typeof renderNoten === 'function') renderNoten();
-    if (typeof renderSettingsFaecher === 'function') renderSettingsFaecher();
-  }
+  if (typeof renderSettings === 'function') renderSettings();
 }
 
 /* ── NOTE MODAL ───────────────────────────────────────── */
 function openAddNote() {
   document.getElementById('note-edit-id').value = '';
-  document.getElementById('modal-note-title').innerHTML = '<svg><use href="#ic-note"/></svg> Note hinzufügen';
-  ['note-val'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('note-gewichtung').value = '1.0';
-  document.getElementById('note-thema-id').value = '';
-  document.getElementById('note-thema-search').value = '';
+  document.getElementById('modal-note-title').textContent = '📝 Note hinzufügen';
+  ['note-val','note-titel'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('note-datum').value = new Date().toISOString().split('T')[0];
-  const errEl = document.getElementById('note-err');
-  if (errEl) errEl.style.display = 'none';
   openModal('note');
 }
 function openAddNoteForFach(fid) {
   openAddNote();
   document.getElementById('note-fach').value = fid;
-  _themaDropFachId = fid;
 }
 function openEditNote(nid) {
   const n = SF.noten.find(x => x.id === nid);
   if (!n) return;
   document.getElementById('note-edit-id').value = nid;
-  document.getElementById('modal-note-title').innerHTML = '<svg><use href="#ic-edit"/></svg> Note bearbeiten';
-  document.getElementById('note-fach').value    = n.fach_id;
-  document.getElementById('note-val').value     = n.note;
-  document.getElementById('note-gewichtung').value = n.gewichtung || 1.0;
-  document.getElementById('note-sem').value     = n.semester || '';
-  document.getElementById('note-datum').value   = n.datum;
-  document.getElementById('note-thema-id').value = n.thema_id || '';
-  document.getElementById('note-thema-search').value = n.thema_name || '';
-  _themaDropFachId = n.fach_id;
-  const errEl = document.getElementById('note-err');
-  if (errEl) errEl.style.display = 'none';
+  document.getElementById('modal-note-title').textContent = '✏️ Note bearbeiten';
+  document.getElementById('note-fach').value  = n.fach_id;
+  document.getElementById('note-val').value   = n.note;
+  document.getElementById('note-sem').value   = n.semester || 1;
+  document.getElementById('note-titel').value = n.titel || '';
+  document.getElementById('note-datum').value = n.datum;
   openModal('note');
 }
 async function saveNote() {
-  const fid   = +document.getElementById('note-fach').value;
-  const val   = +document.getElementById('note-val').value;
-  const gew   = parseFloat(document.getElementById('note-gewichtung').value) || 1.0;
-  const sem   = document.getElementById('note-sem').value;
+  const fid = +document.getElementById('note-fach').value;
+  const val = +document.getElementById('note-val').value;
+  const sem = document.getElementById('note-sem').value;
+  const titel = document.getElementById('note-titel').value.trim();
   const datum = document.getElementById('note-datum').value;
-  const eid   = document.getElementById('note-edit-id').value;
-  const thema_id = +document.getElementById('note-thema-id').value || null;
-  const errEl = document.getElementById('note-err');
-  if (errEl) errEl.style.display = 'none';
-  if (!fid || !val || !datum) { showErr(errEl, 'Fach, Note und Datum erforderlich'); return; }
-  if (val < 1 || val > 6) { showErr(errEl, 'Note muss zwischen 1 und 6 sein'); return; }
-  if (gew <= 0) { showErr(errEl, 'Gewichtung muss grösser als 0 sein'); return; }
+  const eid = document.getElementById('note-edit-id').value;
+  if (!fid || !val || !datum) { toast('Fach, Note und Datum erforderlich', 'err'); return; }
+  if (val < 1 || val > 6) { toast('Note muss zwischen 1 und 6 sein', 'err'); return; }
   let r;
   if (eid) {
-    r = await api('PUT', '/noten/' + eid, { fach_id: fid, note: val, gewichtung: gew, semester: sem, thema_id, datum });
+    r = await api('PUT', '/noten/' + eid, { fach_id: fid, note: val, semester: sem, titel, datum });
     if (r.id) SF.noten = SF.noten.map(n => n.id === +eid ? r : n);
   } else {
-    r = await api('POST', '/noten', { fach_id: fid, note: val, gewichtung: gew, semester: sem, thema_id, datum });
+    r = await api('POST', '/noten', { fach_id: fid, note: val, semester: sem, titel, datum });
     if (r.id) SF.noten.push(r);
   }
   if (r.id) {
     closeModal('note');
-    toast(eid ? 'Note aktualisiert' : 'Note gespeichert', 'ok');
+    toast(eid ? '✅ Note aktualisiert' : '✅ Note gespeichert', 'ok');
     if (typeof renderNoten === 'function') renderNoten();
   }
 }
@@ -462,7 +349,7 @@ async function delNote(nid) {
 /* ── LERNEINTRAG MODAL ────────────────────────────────── */
 function openAddLernen() {
   document.getElementById('lernen-edit-id').value = '';
-  document.getElementById('lernen-modal-title').innerHTML = '<svg><use href="#ic-clock"/></svg> Lerneintrag';
+  document.getElementById('lernen-modal-title').textContent = '📚 Lerneintrag';
   ['lernen-desc','lernen-dauer','lernen-titel'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('lernen-datum').value = new Date().toISOString().split('T')[0];
   openModal('lernen');
@@ -470,14 +357,14 @@ function openAddLernen() {
 function openEditLernen(eid) {
   const e = SF.eintraege.find(x => x.id === eid);
   if (!e) return;
-  document.getElementById('lernen-edit-id').value  = eid;
-  document.getElementById('lernen-modal-title').innerHTML = '<svg><use href="#ic-edit"/></svg> Eintrag bearbeiten';
-  document.getElementById('lernen-fach').value     = e.fach_id;
-  document.getElementById('lernen-methode').value  = e.methode_id || '';
-  document.getElementById('lernen-titel').value    = e.titel;
-  document.getElementById('lernen-desc').value     = e.beschreibung || '';
-  document.getElementById('lernen-dauer').value    = e.dauer_minuten;
-  document.getElementById('lernen-datum').value    = e.datum;
+  document.getElementById('lernen-edit-id').value = eid;
+  document.getElementById('lernen-modal-title').textContent = '✏️ Eintrag bearbeiten';
+  document.getElementById('lernen-fach').value    = e.fach_id;
+  document.getElementById('lernen-methode').value = e.methode_id || '';
+  document.getElementById('lernen-titel').value   = e.titel;
+  document.getElementById('lernen-desc').value    = e.beschreibung || '';
+  document.getElementById('lernen-dauer').value   = e.dauer_minuten;
+  document.getElementById('lernen-datum').value   = e.datum;
   openModal('lernen');
 }
 async function saveLerneintrag() {
@@ -499,7 +386,7 @@ async function saveLerneintrag() {
   }
   if (r.id) {
     closeModal('lernen');
-    toast(eid ? 'Eintrag aktualisiert' : 'Eintrag gespeichert', 'ok');
+    toast(eid ? '✅ Eintrag aktualisiert' : '✅ Eintrag gespeichert', 'ok');
     if (typeof renderLernen === 'function') renderLernen();
   }
 }
@@ -526,9 +413,9 @@ function renderThemenList() {
   if (!ts.length) { el.innerHTML = '<p style="color:var(--text3);font-size:.82rem;padding:8px 0">Noch keine Themen für dieses Fach.</p>'; return; }
   el.innerHTML = ts.map(t => `
     <div class="thema-row">
-      <span class="${t.abgeschlossen ? 'thema-done' : ''} thema-row-name">${t.name}</span>
-      ${iconBtn(t.abgeschlossen ? 'ic-undo' : 'ic-check', `toggleThema(${t.id})`, t.abgeschlossen ? 'Wiederherstellen' : 'Abschliessen')}
-      ${iconBtn('ic-trash', `delThema(${t.id})`, 'Löschen', 'btn-icon-danger')}
+      <span class="${t.abgeschlossen ? 'thema-done' : ''}" style="flex:1">${t.name}</span>
+      <button class="btn-icon" onclick="toggleThema(${t.id})">${t.abgeschlossen ? '↩️' : '✅'}</button>
+      <button class="btn-icon" onclick="delThema(${t.id})">🗑️</button>
     </div>`).join('');
 }
 async function addThema() {
@@ -557,25 +444,17 @@ async function delThema(tid) {
 }
 
 /* ── METHODE MODAL ────────────────────────────────────── */
-function openAddMethode() {
-  buildColorDots('methode-cdots', '#CBA6F7');
-  SF.selMethodeColor = '#CBA6F7';
-  openModal('methode');
-}
 async function saveMethode() {
   const name = document.getElementById('m-name').value.trim();
   const desc = document.getElementById('m-desc').value.trim();
   const empf = document.getElementById('m-empf').value.trim();
   if (!name) { toast('Name erforderlich', 'err'); return; }
-  const r = await api('POST', '/lernmethoden', { name, beschreibung: desc, empfehlung: empf, farbe: SF.selMethodeColor });
+  const r = await api('POST', '/lernmethoden', { name, beschreibung: desc, empfehlung: empf });
   if (r.id) {
     SF.methoden.push(r);
     fillMethodeDrops();
-    document.getElementById('m-name').value = '';
-    document.getElementById('m-desc').value = '';
-    document.getElementById('m-empf').value = '';
     closeModal('methode');
-    toast('Methode gespeichert', 'ok');
+    toast('✅ Methode gespeichert', 'ok');
     if (typeof renderMethoden === 'function') renderMethoden();
   }
 }
@@ -583,10 +462,11 @@ async function saveMethode() {
 /* ── KALENDER EVENT MODAL ─────────────────────────────── */
 function openAddEvent(date) {
   const el = document.getElementById('modal-event');
-  if (!el) return;
+  if (!el) { console.error('modal-event not found'); return; }
   document.getElementById('event-titel').value = '';
   document.getElementById('event-start').value = '';
   document.getElementById('event-datum').value = date || new Date().toISOString().split('T')[0];
+  // Fill fach dropdown for event
   const ef = document.getElementById('event-fach');
   if (ef) ef.innerHTML = '<option value="">Kein Fach</option>' + SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
   openModal('event');
@@ -601,37 +481,18 @@ async function saveEvent() {
   if (r.id) {
     SF.kalender.push(r);
     closeModal('event');
-    toast('Termin gespeichert', 'ok');
+    toast('✅ Termin gespeichert', 'ok');
     if (typeof renderKalender === 'function') renderKalender();
   }
 }
 
-/* ── SEMESTER ─────────────────────────────────────────── */
-async function addSemester(name) {
-  if (!name?.trim()) return;
-  const r = await api('POST', '/semester', { name: name.trim() });
-  if (r.id) {
-    SF.semester.push(r);
-    fillSemesterDrops();
-    if (typeof renderSemesterSettings === 'function') renderSemesterSettings();
-    toast('Semester hinzugefügt', 'ok');
-  }
-}
-async function delSemester(sid) {
-  await api('DELETE', '/semester/' + sid);
-  SF.semester = SF.semester.filter(s => s.id !== sid);
-  fillSemesterDrops();
-  if (typeof renderSemesterSettings === 'function') renderSemesterSettings();
-  toast('Semester gelöscht', 'ok');
-}
-
 window.addEventListener('DOMContentLoaded', () => {
   applyTheme();
+  // Always: keyboard shortcuts + color dots (needed on landing)
   const lp = document.getElementById('login-pw');
   const rp = document.getElementById('reg-pw');
   if (lp) lp.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   if (rp) rp.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
-  buildColorDots('fach-cdots');
-  buildColorDots('methode-cdots', '#CBA6F7');
+  buildColorDots();
   init();
 });
