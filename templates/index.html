@@ -8,17 +8,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
 <!-- ══ MODALS ═══════════════════════════════════════════════════════════════ -->
 
-<!-- Login Modal -->
-<div class="overlay" id="modal-login">
+<!-- Login -->
+<div class="overlay" id="modal-login" onclick="closeModalOutside(event,'login')">
   <div class="modal modal-sm">
-    <button class="modal-close" onclick="closeModal('login')" title="Schliessen">✕</button>
+    <button class="modal-close" onclick="closeModal('login')">✕</button>
     <h2>Willkommen zurück</h2><p class="modal-sub">Melde dich an um weiterzumachen</p>
     <div class="fg"><label class="flbl">Benutzername</label><input class="fi" id="login-user" type="text" placeholder="admin" autocomplete="username"></div>
     <div class="fg"><label class="flbl">Passwort</label><input class="fi" id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
@@ -30,14 +28,14 @@
   </div>
 </div>
 
-<!-- Register Modal -->
-<div class="overlay" id="modal-register">
+<!-- Register -->
+<div class="overlay" id="modal-register" onclick="closeModalOutside(event,'register')">
   <div class="modal modal-sm">
-    <button class="modal-close" onclick="closeModal('register')" title="Schliessen">✕</button>
+    <button class="modal-close" onclick="closeModal('register')">✕</button>
     <h2>Konto erstellen</h2><p class="modal-sub">Kostenlos registrieren und loslegen</p>
-    <div class="fg"><label class="flbl">Benutzername *</label><input class="fi" id="reg-user" type="text" placeholder="Dein Benutzername" autocomplete="username"></div>
+    <div class="fg"><label class="flbl">Benutzername *</label><input class="fi" id="reg-user" type="text" placeholder="Dein Benutzername"></div>
     <div class="fg"><label class="flbl">E-Mail (optional)</label><input class="fi" id="reg-email" type="email" placeholder="name@beispiel.ch"></div>
-    <div class="fg"><label class="flbl">Passwort *</label><input class="fi" id="reg-pw" type="password" placeholder="Min. 6 Zeichen" autocomplete="new-password"></div>
+    <div class="fg"><label class="flbl">Passwort *</label><input class="fi" id="reg-pw" type="password" placeholder="Min. 6 Zeichen"></div>
     <div id="reg-err" class="ferr" style="display:none"></div>
     <div class="modal-foot">
       <button class="btn btn-p" onclick="doRegister()">Konto erstellen</button>
@@ -46,48 +44,49 @@
   </div>
 </div>
 
-<!-- Note Modal -->
-<div class="overlay" id="modal-note" onclick="closeModalOutside(event,'modal-note')">
+<!-- Note -->
+<div class="overlay" id="modal-note" onclick="closeModalOutside(event,'note')">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('note')" title="Schliessen">✕</button>
-    <h2 id="modal-note-title">Note hinzufügen</h2><p class="modal-sub">Trage eine Note in dein Fach ein</p>
+    <button class="modal-close" onclick="closeModal('note')">✕</button>
+    <h2 id="modal-note-title">Note hinzufügen</h2><p class="modal-sub">Trage eine Note ein</p>
     <input type="hidden" id="note-edit-id">
-    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="note-fach" onchange="loadThemenNote()"></select></div>
-    <div class="frow">
-      <div class="fg"><label class="flbl">Note</label><input class="fi" id="note-val" type="number" min="1" max="6" step="0.25" placeholder="5.5"></div>
-      <div class="fg"><label class="flbl">Gewichtung</label><input class="fi" id="note-gewichtung" type="number" min="0.01" max="10" step="0.01" placeholder="1.0" title="z.B. 0.33 für 33%, 1 für 100%"></div>
-    </div>
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="note-fach" onchange="loadNoteThemen()"></select></div>
     <div class="fg">
       <label class="flbl">Thema</label>
-      <div class="searchable-select-wrap">
-        <input class="fi" id="note-thema-search" placeholder="Thema suchen oder neu erstellen..." autocomplete="off" oninput="filterThemenDropdown('note')" onfocus="openThemenDropdown('note')" onblur="delayCloseDropdown('note')">
+      <div class="search-wrap" id="note-thema-wrap">
+        <input class="fi" id="note-thema-search" placeholder="Thema suchen oder neu erstellen..." autocomplete="off"
+          oninput="filterNoteThemen()" onfocus="openNoteThemenDropdown()" onblur="setTimeout(()=>closeNoteThemenDropdown(),180)">
+        <div class="dropdown-list" id="note-thema-dropdown"></div>
         <input type="hidden" id="note-thema-id">
-        <div class="searchable-dropdown" id="note-thema-dropdown" style="display:none"></div>
       </div>
     </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Note</label><input class="fi" id="note-val" type="number" min="1" max="6" step="0.25" placeholder="5.5"></div>
+      <div class="fg"><label class="flbl">Gewichtung</label><input class="fi" id="note-gewichtung" type="number" min="0.01" step="0.01" placeholder="1.0" value="1.0"></div>
+    </div>
+    <div class="fg"><label class="flbl">Semester</label>
+      <select class="fi" id="note-sem"></select>
+    </div>
     <div class="fg"><label class="flbl">Datum</label><input class="fi" id="note-datum" type="date"></div>
-    <div class="fg"><label class="flbl">Semester</label><select class="fi" id="note-semester-label"></select></div>
-    <div class="modal-foot"><button class="btn btn-p" onclick="saveNote()">Speichern</button><button class="btn btn-s" onclick="closeModal('note')">Abbrechen</button></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveNote()">Speichern</button>
+      <button class="btn btn-s" onclick="closeModal('note')">Abbrechen</button>
+    </div>
   </div>
 </div>
 
-<!-- Lernen Modal -->
-<div class="overlay" id="modal-lernen" onclick="closeModalOutside(event,'modal-lernen')">
+<!-- Lernen -->
+<div class="overlay" id="modal-lernen" onclick="closeModalOutside(event,'lernen')">
   <div class="modal modal-lg">
-    <button class="modal-close" onclick="closeModal('lernen')" title="Schliessen">✕</button>
+    <button class="modal-close" onclick="closeModal('lernen')">✕</button>
     <h2 id="lernen-modal-title">Lerneintrag</h2><p class="modal-sub">Füge eine Lerneinheit hinzu</p>
     <input type="hidden" id="lernen-edit-id">
     <div class="frow">
       <div class="fg"><label class="flbl">Fach *</label><select class="fi" id="lernen-fach" onchange="loadThemenLernen()"></select></div>
       <div class="fg"><label class="flbl">Methode</label><select class="fi" id="lernen-methode"></select></div>
     </div>
-    <div class="fg">
-      <label class="flbl">Thema</label>
-      <div class="searchable-select-wrap">
-        <input class="fi" id="lernen-thema-search" placeholder="Thema suchen oder neu erstellen..." autocomplete="off" oninput="filterThemenDropdown('lernen')" onfocus="openThemenDropdown('lernen')" onblur="delayCloseDropdown('lernen')">
-        <input type="hidden" id="lernen-thema-id">
-        <div class="searchable-dropdown" id="lernen-thema-dropdown" style="display:none"></div>
-      </div>
+    <div class="fg"><label class="flbl">Thema wählen</label>
+      <select class="fi" id="lernen-thema-sel" onchange="applyThemaLernen()"><option value="">— Thema auswählen —</option></select>
     </div>
     <div class="fg"><label class="flbl">Titel *</label><input class="fi" id="lernen-titel" type="text" placeholder="Was hast du gemacht?"></div>
     <div class="fg"><label class="flbl">Beschreibung</label><textarea class="fi" id="lernen-desc" placeholder="Optionale Notizen..."></textarea></div>
@@ -95,22 +94,19 @@
       <div class="fg"><label class="flbl">Dauer (Min) *</label><input class="fi" id="lernen-dauer" type="number" min="1" placeholder="45"></div>
       <div class="fg"><label class="flbl">Datum</label><input class="fi" id="lernen-datum" type="date"></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-p" onclick="saveLerneintrag()">Speichern</button><button class="btn btn-s" onclick="closeModal('lernen')">Abbrechen</button></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveLerneintrag()">Speichern</button>
+      <button class="btn btn-s" onclick="closeModal('lernen')">Abbrechen</button>
+    </div>
   </div>
 </div>
 
-<!-- Themen Modal -->
-<div class="overlay" id="modal-themen" onclick="closeModalOutside(event,'modal-themen')">
+<!-- Themen verwalten -->
+<div class="overlay" id="modal-themen" onclick="closeModalOutside(event,'themen')">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('themen')" title="Schliessen">✕</button>
+    <button class="modal-close" onclick="closeModal('themen')">✕</button>
     <h2>Themen verwalten</h2><p class="modal-sub">Themen pro Fach hinzufügen und verwalten</p>
     <div class="fg"><label class="flbl">Fach</label><select class="fi" id="thema-fach" onchange="renderThemenList()"></select></div>
-    <div class="thema-search">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="fi" id="thema-search-input" placeholder="Themen suchen..." oninput="renderThemenList()">
-      </div>
-    </div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
       <input class="fi" id="thema-name" placeholder="Neues Thema..." style="flex:1" onkeydown="if(event.key==='Enter')addThema()">
       <button class="btn btn-p btn-sm" onclick="addThema()">+ Hinzufügen</button>
@@ -120,38 +116,44 @@
   </div>
 </div>
 
-<!-- Fach Modal -->
-<div class="overlay" id="modal-fach" onclick="closeModalOutside(event,'modal-fach')">
+<!-- Fach -->
+<div class="overlay" id="modal-fach" onclick="closeModalOutside(event,'fach')">
   <div class="modal modal-sm">
-    <button class="modal-close" onclick="closeModal('fach')" title="Schliessen">✕</button>
+    <button class="modal-close" onclick="closeModal('fach')">✕</button>
     <h2>Fach hinzufügen</h2><p class="modal-sub">Neues Schulfach erstellen</p>
     <div class="fg"><label class="flbl">Fachname</label><input class="fi" id="new-fach-name" type="text" placeholder="z.B. Chemie" onkeydown="if(event.key==='Enter')saveFach()"></div>
     <div class="fg"><label class="flbl">Farbe</label><div class="cdots" id="fach-cdots"></div></div>
-    <div class="modal-foot"><button class="btn btn-p" onclick="saveFach()">Hinzufügen</button><button class="btn btn-s" onclick="closeModal('fach')">Abbrechen</button></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveFach()">Hinzufügen</button>
+      <button class="btn btn-s" onclick="closeModal('fach')">Abbrechen</button>
+    </div>
   </div>
 </div>
 
-<!-- Methode Modal -->
-<div class="overlay" id="modal-methode" onclick="closeModalOutside(event,'modal-methode')">
+<!-- Methode -->
+<div class="overlay" id="modal-methode" onclick="closeModalOutside(event,'methode')">
   <div class="modal modal-lg">
-    <button class="modal-close" onclick="closeModal('methode')" title="Schliessen">✕</button>
+    <button class="modal-close" onclick="closeModal('methode')">✕</button>
     <h2>Eigene Methode</h2><p class="modal-sub">Füge deine persönliche Lernmethode hinzu</p>
     <div class="fg"><label class="flbl">Name</label><input class="fi" id="m-name" type="text" placeholder="z.B. Visualisierung"></div>
-    <div class="fg">
-      <label class="flbl">Icon auswählen</label>
+    <div class="fg"><label class="flbl">Icon auswählen</label>
       <div id="m-icon-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:4px"></div>
-      <input type="hidden" id="m-icon" value="💡">
+      <input type="hidden" id="m-icon" value="BookOpen">
     </div>
+    <div class="fg"><label class="flbl">Farbe</label><div class="cdots" id="methode-cdots"></div></div>
     <div class="fg"><label class="flbl">Beschreibung</label><textarea class="fi" id="m-desc" placeholder="Wie funktioniert diese Methode?"></textarea></div>
     <div class="fg"><label class="flbl">Empfehlung (Fächer)</label><input class="fi" id="m-empf" type="text" placeholder="z.B. Biologie, Geschichte"></div>
-    <div class="modal-foot"><button class="btn btn-p" onclick="saveMethode()">Speichern</button><button class="btn btn-s" onclick="closeModal('methode')">Abbrechen</button></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveMethode()">Speichern</button>
+      <button class="btn btn-s" onclick="closeModal('methode')">Abbrechen</button>
+    </div>
   </div>
 </div>
 
-<!-- Event Modal -->
-<div class="overlay" id="modal-event" onclick="closeModalOutside(event,'modal-event')">
+<!-- Kalender Event -->
+<div class="overlay" id="modal-event" onclick="closeModalOutside(event,'event')">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('event')" title="Schliessen">✕</button>
+    <button class="modal-close" onclick="closeModal('event')">✕</button>
     <h2>Termin planen</h2><p class="modal-sub">Plane eine Lerneinheit im Kalender</p>
     <div class="fg"><label class="flbl">Titel</label><input class="fi" id="event-titel" placeholder="z.B. Mathe lernen" onkeydown="if(event.key==='Enter')saveEvent()"></div>
     <div class="fg"><label class="flbl">Fach</label><select class="fi" id="event-fach"></select></div>
@@ -159,14 +161,17 @@
       <div class="fg"><label class="flbl">Datum</label><input class="fi" id="event-datum" type="date"></div>
       <div class="fg"><label class="flbl">Uhrzeit</label><input class="fi" id="event-start" type="time"></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-p" onclick="saveEvent()">Planen</button><button class="btn btn-s" onclick="closeModal('event')">Abbrechen</button></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveEvent()">Planen</button>
+      <button class="btn btn-s" onclick="closeModal('event')">Abbrechen</button>
+    </div>
   </div>
 </div>
 
-<!-- Event Detail Modal -->
-<div class="overlay" id="modal-event-detail" onclick="closeModalOutside(event,'modal-event-detail')">
+<!-- Event Detail -->
+<div class="overlay" id="modal-event-detail" onclick="closeModalOutside(event,'event-detail')">
   <div class="modal modal-sm">
-    <button class="modal-close" onclick="closeModal('event-detail')" title="Schliessen">✕</button>
+    <button class="modal-close" onclick="closeModal('event-detail')">✕</button>
     <h2 id="ev-detail-title">Termin</h2>
     <p class="modal-sub" id="ev-detail-info">–</p>
     <div class="modal-foot">
@@ -176,21 +181,22 @@
   </div>
 </div>
 
-
 <!-- ══ LANDING ════════════════════════════════════════════════════════════════ -->
-<div id="landing" style="display:flex">
+<div id="landing" style="display:none">
+  <div class="land-bg"></div>
   <nav class="land-nav">
-    <div class="land-logo"><div class="logo-mark">📚</div>StudyFlow</div>
+    <div class="land-logo">
+      <div class="logo-mark">📚</div>StudyFlow
+    </div>
     <div class="land-actions">
-      <div class="land-theme-slider">
-        <div class="theme-slider-wrap" onclick="toggleTheme()">
-          <span class="theme-slider-icon">☀️</span>
-          <label class="theme-slider-toggle" onclick="event.stopPropagation()">
-            <input type="checkbox" id="land-dark-toggle" onchange="toggleTheme()">
-            <span class="theme-slider-track"></span>
-          </label>
-          <span class="theme-slider-icon">🌙</span>
-        </div>
+      <div class="theme-toggle-wrap">
+        <span class="theme-toggle-label" id="land-theme-ico">☀️</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="land-theme-toggle" onchange="toggleTheme()">
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+        <span class="theme-toggle-label" id="land-theme-ico2">🌙</span>
       </div>
     </div>
   </nav>
@@ -198,9 +204,11 @@
     <div class="hero-eyebrow">✦ IDPA — Berufsmatura Lernplattform</div>
     <h1>Lerne <em>smarter</em>,<br>nicht härter.</h1>
     <p>Lernzeit tracken, Noten verwalten und Fortschritt mit coolen Grafiken sichtbar machen.</p>
-    <div class="hero-center-btns">
-      <button class="btn btn-p btn-lg" onclick="openModal('login')">Anmelden</button>
-      <button class="btn btn-s btn-lg" onclick="openModal('register')">Registrieren</button>
+    <div class="hero-cta">
+      <div class="hero-cta-btns">
+        <button class="btn btn-p btn-lg" onclick="openModal('register')">Registrieren</button>
+        <button class="btn btn-s btn-lg" onclick="openModal('login')" style="backdrop-filter:blur(8px)">Anmelden</button>
+      </div>
     </div>
     <div class="feat-strip">
       <div class="feat-chip"><span>⏱️</span> Timer & Einträge</div>
@@ -241,39 +249,40 @@
   <main class="main-content">
     <div class="topbar">
       <div class="topbar-left">
-        <button class="burger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+        <button class="burger" onclick="toggleSidebar()" style="padding:6px;border-radius:var(--r0);background:var(--surface);border:1px solid var(--border)"><span style="display:block;width:18px;height:2px;background:var(--text);margin:3px 0"></span><span style="display:block;width:18px;height:2px;background:var(--text);margin:3px 0"></span><span style="display:block;width:18px;height:2px;background:var(--text);margin:3px 0"></span></button>
         <h1 class="topbar-title" id="topbar-title">Übersicht</h1>
       </div>
       <div class="topbar-right" id="topbar-actions">
-        <div class="theme-slider-wrap" onclick="toggleTheme()" style="margin-right:4px">
-          <span class="theme-slider-icon" style="font-size:.8rem">☀️</span>
-          <label class="theme-slider-toggle" onclick="event.stopPropagation()">
-            <input type="checkbox" id="app-dark-toggle" onchange="toggleTheme()">
-            <span class="theme-slider-track"></span>
+        <div class="theme-toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="app-theme-toggle" onchange="toggleTheme()">
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
           </label>
-          <span class="theme-slider-icon" style="font-size:.8rem">🌙</span>
         </div>
       </div>
     </div>
 
     <!-- ── DASHBOARD ── -->
     <div class="page page-content" id="page-dashboard">
-      <div class="grid-4" id="dash-stats" style="margin-bottom:24px">
-        <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-label">Lernzeit diese Woche</div><div class="stat-val">0h</div><div class="stat-sub">0 Minuten total</div></div>
-        <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-label">Aktive Fächer</div><div class="stat-val">0</div><div class="stat-sub">Schuljahr 2025</div></div>
-        <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-label">Letzte Note</div><div class="stat-val">–</div><div class="stat-sub">Noch keine Noten</div></div>
-        <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-label">Gesamtdurchschnitt</div><div class="stat-val">–</div><div class="stat-sub">Über alle Fächer</div></div>
-      </div>
+      <div class="grid-4" id="dash-stats" style="margin-bottom:24px"></div>
       <div class="grid-2" style="margin-bottom:24px">
         <div class="chart-card"><div class="chart-title">📚 Lernzeit pro Fach</div><div class="chart-sub">Gesamte Lernzeit in Stunden</div><div class="chart-wrap"><canvas id="ch-dash-fach"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">📊 Notendurchschnitte</div><div class="chart-sub">Gewichteter Durchschnitt alle Fächer</div><div class="chart-wrap"><canvas id="ch-dash-noten"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">📊 Notendurchschnitte</div><div class="chart-sub">Alle Fächer im Überblick</div><div class="chart-wrap"><canvas id="ch-dash-noten"></canvas></div></div>
       </div>
-      <div class="sec-head"><div><div class="sec-title">Letzte Lerneinträge</div><div class="sec-sub">Deine neuesten Aktivitäten</div></div></div>
+      <div class="section-hd">
+        <div><div class="section-title">Letzte Lerneinträge</div><div class="section-sub">Deine letzten 5 Einträge</div></div>
+        <button class="btn btn-s btn-sm" onclick="showPage('lernen')">Alle anzeigen →</button>
+      </div>
       <div id="dash-eintraege"></div>
     </div>
 
     <!-- ── NOTEN ── -->
     <div class="page page-content" id="page-noten" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-s btn-sm" onclick="openAddFach()">+ Fach</button>
+        <button class="btn btn-p btn-sm" onclick="openAddNote()">+ Note</button>
+      </div>
       <div id="noten-list"></div>
     </div>
 
@@ -281,18 +290,23 @@
     <div class="page page-content" id="page-lernen" style="display:none">
       <div class="grid-2" style="margin-bottom:28px">
         <div>
-          <div class="sec-title" style="margin-bottom:14px">⏱️ Lern-Timer</div>
-          <div class="timer-card">
-            <div class="timer-lbl">Aktuelle Sitzung</div>
+          <div class="section-title" style="margin-bottom:14px">⏱️ Lern-Timer</div>
+          <div class="timer-wrap">
             <div class="timer-ring-wrap">
-              <svg width="190" height="190" viewBox="0 0 190 190"><circle class="ring-bg" cx="95" cy="95" r="80" stroke-width="10"/><circle class="ring-fill" id="ring-fill" cx="95" cy="95" r="80" stroke-width="10" stroke-dasharray="502.65" stroke-dashoffset="502.65"/></svg>
-              <div class="timer-center"><div class="timer-time" id="timer-display">00:00:00</div><div class="timer-state" id="timer-state-lbl">Bereit</div></div>
+              <svg class="timer-ring" width="140" height="140" viewBox="0 0 140 140">
+                <circle class="timer-ring-bg" cx="70" cy="70" r="55"/>
+                <circle class="timer-ring-prog" id="ring-fill" cx="70" cy="70" r="55"/>
+              </svg>
+              <div class="timer-display">
+                <div class="timer-time" id="timer-display">00:00:00</div>
+                <div class="timer-state" id="timer-state-lbl">Bereit</div>
+              </div>
             </div>
-            <div class="timer-fach-lbl" id="timer-fach-lbl">Kein Fach gewählt</div>
+            <div style="font-size:.82rem;color:var(--text2)" id="timer-fach-lbl">Kein Fach gewählt</div>
             <div class="timer-btns">
-              <button class="tbtn tbtn-start" id="timer-startstop" onclick="toggleTimer()">▶ Starten</button>
-              <button class="tbtn tbtn-save" onclick="saveTimerEntry()">Speichern</button>
-              <button class="tbtn tbtn-reset" onclick="resetTimer()">↺ Reset</button>
+              <button class="btn btn-p btn-sm" id="timer-startstop" onclick="toggleTimer()">▶ Starten</button>
+              <button class="btn btn-s btn-sm" onclick="saveTimerEntry()">Speichern</button>
+              <button class="btn btn-s btn-sm" onclick="resetTimer()">↺ Reset</button>
             </div>
           </div>
           <div style="margin-top:14px">
@@ -300,7 +314,7 @@
           </div>
         </div>
         <div>
-          <div class="sec-title" style="margin-bottom:14px">📝 Schnelleintrag</div>
+          <div class="section-title" style="margin-bottom:14px">📝 Schnelleintrag</div>
           <div class="card" style="padding:22px">
             <div class="fg"><label class="flbl">Fach *</label><select class="fi" id="quick-fach" onchange="loadThemenQuick()"></select></div>
             <div class="fg"><label class="flbl">Thema</label><select class="fi" id="quick-thema" onchange="applyThemaQuick()"><option value="">— Thema auswählen —</option></select></div>
@@ -309,117 +323,146 @@
               <div class="fg"><label class="flbl">Minuten *</label><input class="fi" id="quick-dauer" type="number" min="1" placeholder="45"></div>
               <div class="fg"><label class="flbl">Datum</label><input class="fi" id="quick-datum" type="date"></div>
             </div>
-            <button class="btn btn-p" style="width:100%" onclick="quickSave()">✓ Eintrag speichern</button>
+            <button class="btn btn-p" style="width:100%" onclick="quickSave()">Eintrag speichern</button>
           </div>
         </div>
       </div>
-      <div class="sec-head">
-        <div><div class="sec-title">Alle Lerneinträge</div><div class="sec-sub" id="lernen-count"></div></div>
+      <div class="section-hd">
+        <div><div class="section-title">Alle Lerneinträge</div><div class="section-sub" id="lernen-count"></div></div>
+        <button class="btn btn-s btn-sm" onclick="openThemenModal()">Themen verwalten</button>
+        <button class="btn btn-p btn-sm" onclick="openAddLernen()">+ Eintrag</button>
       </div>
       <div id="lernen-list"></div>
     </div>
 
     <!-- ── KALENDER ── -->
     <div class="page page-content" id="page-kalender" style="display:none">
-      <div class="cal-wrap">
-        <div class="cal-nav">
-          <div class="cal-nav-l">
-            <button class="btn btn-s btn-sm" style="padding:7px 10px" onclick="calPrev()">◀</button>
-            <button class="btn btn-s btn-sm" style="padding:7px 10px" onclick="calNext()">▶</button>
-            <button class="btn btn-s btn-sm" onclick="calToday()">Heute</button>
-          </div>
-          <div class="cal-title" id="cal-title">–</div>
-          <div class="cal-nav-r">
-            <div class="view-toggle">
-              <button class="view-btn active" id="vbtn-monat" onclick="setCalView('monat')">Monat</button>
-              <button class="view-btn" id="vbtn-woche" onclick="setCalView('woche')">Woche</button>
-            </div>
-          </div>
+      <div class="cal-nav">
+        <button class="btn btn-s btn-sm" onclick="calPrev()">◀</button>
+        <button class="btn btn-s btn-sm" onclick="calToday()">Heute</button>
+        <div class="cal-month-title" id="cal-title">–</div>
+        <div class="cal-view-btns">
+          <button class="cal-view-btn active" id="vbtn-monat" onclick="setCalView('monat')">Monat</button>
+          <button class="cal-view-btn" id="vbtn-woche" onclick="setCalView('woche')">Woche</button>
         </div>
-        <div class="cal-head">
-          <div class="cal-dow">Mo</div><div class="cal-dow">Di</div><div class="cal-dow">Mi</div>
-          <div class="cal-dow">Do</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div><div class="cal-dow">So</div>
-        </div>
-        <div class="cal-body" id="cal-body"></div>
+        <button class="btn btn-s btn-sm" onclick="calNext()">▶</button>
+        <button class="btn btn-p btn-sm" onclick="openAddEvent()">+ Termin</button>
       </div>
+      <div class="cal-grid" id="cal-header-row">
+        <div class="cal-hdr">Mo</div><div class="cal-hdr">Di</div><div class="cal-hdr">Mi</div>
+        <div class="cal-hdr">Do</div><div class="cal-hdr">Fr</div><div class="cal-hdr">Sa</div><div class="cal-hdr">So</div>
+      </div>
+      <div id="cal-body" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:-6px;background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r2) var(--r2);padding:8px 16px 16px"></div>
       <div style="margin-top:24px">
-        <div class="sec-head"><div><div class="sec-title">📌 Kommende Termine</div><div class="sec-sub">Geplante Lerneinheiten</div></div></div>
+        <div class="section-hd"><div><div class="section-title">Kommende Termine</div><div class="section-sub">Geplante Lerneinheiten</div></div></div>
         <div id="upcoming-events"></div>
       </div>
     </div>
 
     <!-- ── STATISTIKEN ── -->
     <div class="page page-content" id="page-statistiken" style="display:none">
-      <!-- Top row: Lernzeit pro Fach + Lernzeit pro Methode -->
-      <div class="stats-top-row">
-        <div class="chart-card"><div class="chart-title">📚 Lernzeit pro Fach</div><div class="chart-sub">Gesamte Stunden je Fach</div><div class="chart-wrap chart-wrap-lg"><canvas id="ch-stat-fach"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">⚡ Lernzeit pro Methode</div><div class="chart-sub">Welche Methode nutzt du am meisten?</div><div class="chart-wrap"><canvas id="ch-stat-meth"></canvas></div></div>
+      <!-- Row 1: Radar (big, top-left) + Lernzeit Fach + Lernzeit Methode -->
+      <div class="stat-row-3" style="margin-bottom:18px">
+        <div class="chart-card">
+          <div class="chart-title">🎯 Lernzeit &amp; Noten Radar</div>
+          <div class="chart-sub">Vergleich aller Fächer</div>
+          <div class="chart-wrap chart-wrap-xl"><canvas id="ch-radar"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">📚 Lernzeit pro Fach</div>
+          <div class="chart-sub">Stunden je Fach</div>
+          <div class="chart-wrap chart-wrap-lg"><canvas id="ch-stat-fach"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">⚡ Lernzeit pro Methode</div>
+          <div class="chart-sub">Stunden je Methode</div>
+          <div class="chart-wrap chart-wrap-lg"><canvas id="ch-stat-meth"></canvas></div>
+        </div>
       </div>
-      <!-- Radar big -->
-      <div class="stats-radar-big">
-        <div class="chart-card"><div class="chart-title">🎯 Lernzeit & Noten Radar</div><div class="chart-sub">Vergleich aller Fächer — Lernzeit (lila) vs. Noten (grün)</div><div class="chart-wrap chart-wrap-xl" style="max-width:600px;margin:0 auto"><canvas id="ch-radar"></canvas></div></div>
+      <!-- Row 2: Noten vs Methode + Thema Radar -->
+      <div class="stat-row-2" style="margin-bottom:18px">
+        <div class="chart-card">
+          <div class="chart-title">📈 Note vs. Lernmethode</div>
+          <div class="chart-sub">Welche Methode bringt die besten Noten?</div>
+          <div class="chart-wrap chart-wrap-lg"><canvas id="ch-note-meth"></canvas></div>
+        </div>
+        <div class="chart-card" id="thema-stat-card">
+          <div class="chart-title">📋 Lernzeit &amp; Note pro Thema</div>
+          <div class="chart-sub">Thema: Lernzeit vs. Notenschnitt</div>
+          <div class="chart-wrap chart-wrap-lg"><canvas id="ch-thema"></canvas></div>
+        </div>
       </div>
-      <!-- Bottom: Verlauf full width + Note vs Methode -->
-      <div class="stats-bottom-row">
-        <div class="chart-card"><div class="chart-title">🗓️ Lernverlauf (30 Tage)</div><div class="chart-sub">Tägliche Lernminuten der letzten 30 Tage</div><div class="chart-wrap chart-wrap-lg"><canvas id="ch-verlauf"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">📈 Note vs. Lernmethode</div><div class="chart-sub">Welche Methode bringt beste Noten?</div><div class="chart-wrap"><canvas id="ch-note-meth"></canvas></div></div>
+      <!-- Row 3: Verlauf full width -->
+      <div class="chart-card">
+        <div class="chart-title">🗓️ Lernverlauf (30 Tage)</div>
+        <div class="chart-sub">Tägliche Lernminuten der letzten 30 Tage</div>
+        <div class="chart-wrap chart-wrap-lg"><canvas id="ch-verlauf"></canvas></div>
       </div>
     </div>
 
     <!-- ── METHODEN ── -->
     <div class="page page-content" id="page-methoden" style="display:none">
-      <div class="grid-auto" id="methoden-grid"></div>
+      <div style="margin-bottom:16px;display:flex;justify-content:flex-end">
+        <button class="btn btn-p btn-sm" onclick="openMethodeModal()">+ Eigene Methode</button>
+      </div>
+      <div class="grid-3" id="methoden-grid"></div>
     </div>
 
     <!-- ── EINSTELLUNGEN ── -->
     <div class="page page-content" id="page-einstellungen" style="display:none">
       <div class="settings-wrap">
+        <!-- Profil -->
         <div class="settings-sec">
           <div class="settings-sec-lbl">Profil</div>
-          <div class="settings-row">
+          <div class="settings-row" style="gap:16px">
             <div style="display:flex;align-items:center;gap:16px">
               <div style="position:relative">
-                <div id="profile-pic" style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#1E1E2E;overflow:hidden;cursor:pointer;flex-shrink:0" onclick="document.getElementById('pic-input').click()">
+                <div id="profile-pic" style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--blue));display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:var(--bg);overflow:hidden;cursor:pointer;flex-shrink:0" onclick="document.getElementById('pic-input').click()">
                   <span id="profile-initials">?</span>
                   <img id="profile-img" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0" src="">
                 </div>
                 <input type="file" id="pic-input" accept="image/*" style="display:none" onchange="uploadProfilePic(event)">
               </div>
-              <div><div class="settings-lbl" id="settings-uname">–</div><div class="settings-sub">Klicke auf das Bild um es zu ändern</div></div>
+              <div>
+                <div class="settings-lbl" id="settings-uname">–</div>
+                <div class="settings-sub">Klicke auf das Bild um es zu ändern</div>
+              </div>
             </div>
             <button class="btn btn-s btn-xs" onclick="removeProfilePic()">Entfernen</button>
           </div>
         </div>
 
+        <!-- Darstellung -->
         <div class="settings-sec">
           <div class="settings-sec-lbl">Darstellung</div>
           <div class="settings-row">
-            <div><div class="settings-lbl">Dark Mode</div><div class="settings-sub">Catppuccin Mocha Design</div></div>
-            <div class="theme-slider-wrap" onclick="toggleTheme()" style="border:none;background:transparent;padding:0">
-              <span class="theme-slider-icon">☀️</span>
-              <label class="theme-slider-toggle" onclick="event.stopPropagation()">
-                <input type="checkbox" id="settings-dark-toggle" onchange="toggleTheme()">
-                <span class="theme-slider-track"></span>
-              </label>
-              <span class="theme-slider-icon">🌙</span>
-            </div>
+            <div><div class="settings-lbl">Dark Mode</div><div class="settings-sub">Dunkles Catppuccin-Design</div></div>
+            <label class="toggle"><input type="checkbox" id="toggle-dark" onchange="toggleTheme()"><span class="toggle-slider"></span></label>
           </div>
         </div>
 
+        <!-- Semester -->
+        <div class="settings-sec">
+          <div class="settings-sec-lbl">Semester verwalten</div>
+          <div id="settings-semester" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px">
+            <input class="fi" id="settings-sem-new" placeholder="z.B. Semester 5 / Schule XY..." style="flex:1;padding:8px 12px" onkeydown="if(event.key==='Enter')settingsAddSemester()">
+            <button class="btn btn-p btn-sm" onclick="settingsAddSemester()">+ Hinzufügen</button>
+          </div>
+        </div>
+
+        <!-- Fächer -->
         <div class="settings-sec">
           <div class="settings-sec-lbl">Fächer verwalten</div>
           <div id="settings-faecher"></div>
           <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="openAddFach()">+ Neues Fach hinzufügen</button>
         </div>
 
+        <!-- Themen -->
         <div class="settings-sec">
           <div class="settings-sec-lbl">Themen verwalten</div>
           <div style="display:flex;gap:8px;margin-bottom:12px">
             <select class="fi" id="settings-thema-fach" onchange="renderSettingsThemen()" style="flex:1;padding:8px 12px"></select>
-          </div>
-          <div class="search-wrap" style="margin-bottom:10px">
-            <span class="search-icon">🔍</span>
-            <input class="fi" id="settings-thema-search" placeholder="Themen suchen..." style="padding-left:36px" oninput="renderSettingsThemen()">
           </div>
           <div id="settings-themen" style="margin-bottom:12px"></div>
           <div style="display:flex;gap:8px">
@@ -428,15 +471,7 @@
           </div>
         </div>
 
-        <div class="settings-sec">
-          <div class="settings-sec-lbl">Semester verwalten</div>
-          <div id="settings-semester" style="margin-bottom:12px"></div>
-          <div style="display:flex;gap:8px">
-            <input class="fi" id="settings-semester-new" placeholder="z.B. Semester 5 / Schule XY..." style="flex:1;padding:8px 12px" onkeydown="if(event.key==='Enter')settingsAddSemester()">
-            <button class="btn btn-p btn-sm" onclick="settingsAddSemester()">+ Hinzufügen</button>
-          </div>
-        </div>
-
+        <!-- Konto -->
         <div class="settings-sec">
           <div class="settings-sec-lbl">Konto</div>
           <div class="settings-row">
@@ -450,25 +485,79 @@
   </main>
 </div>
 
-<div class="toast-wrap" id="toast-wrap"></div>
+<div id="toast-wrap"></div>
+
+<style>
+/* Extra styles that rely on CSS vars set up in style.css */
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--sh0);transition:all .18s}
+.stat-card:hover{box-shadow:var(--sh1);transform:translateY(-1px)}
+.stat-icon{font-size:1.4rem;margin-bottom:4px}
+.stat-label{font-size:.74rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.stat-val{font-size:1.9rem;font-weight:800;line-height:1.1;color:var(--text)}
+.stat-sub{font-size:.74rem;color:var(--muted);margin-top:2px}
+.fade-in{animation:pgIn .3s var(--ease) both}
+.nb{width:34px;height:34px;border-radius:var(--r0);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.88rem}
+.nb-good{background:var(--green-s);color:var(--green)}
+.nb-ok{background:var(--amber-s);color:var(--amber)}
+.nb-bad{background:var(--red-s);color:var(--red)}
+.avg{padding:4px 11px;border-radius:99px;font-size:.76rem;font-weight:700;margin-left:auto}
+.avg-good{background:var(--green-s);color:var(--green)}
+.avg-ok{background:var(--amber-s);color:var(--amber)}
+.avg-bad{background:var(--red-s);color:var(--red)}
+.avg-none{background:var(--surface);color:var(--muted)}
+.fach-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:10px;overflow:hidden;box-shadow:var(--sh0)}
+.fach-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;user-select:none;transition:background .15s}
+.fach-hd:hover{background:var(--surface)}
+.fach-hd-l{display:flex;align-items:center;gap:12px;flex:1}
+.fach-bar{width:4px;height:36px;border-radius:4px;flex-shrink:0}
+.fach-name{font-weight:700;font-size:.95rem}
+.fach-cnt{font-size:.74rem;color:var(--muted);margin-top:1px}
+.fach-chev{font-size:.65rem;color:var(--muted);transition:transform .2s}
+.fach-card.open .fach-chev{transform:rotate(90deg)}
+.fach-body{display:none;border-top:1px solid var(--border)}
+.fach-card.open .fach-body{display:block}
+.fach-foot{padding:12px 20px;display:flex;gap:8px}
+.notes-tbl{width:100%;border-collapse:collapse;font-size:.84rem}
+.notes-tbl th{text-align:left;padding:9px 16px;font-size:.69rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface)}
+.notes-tbl td{padding:10px 16px;border-bottom:1px solid var(--border)}
+.notes-tbl tr:last-child td{border-bottom:none}
+.notes-tbl tr:hover td{background:var(--surface)}
+.entry-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:var(--sh0);transition:all .18s}
+.entry-item:hover{box-shadow:var(--sh1);transform:translateY(-1px)}
+.entry-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.entry-info{flex:1;min-width:0}
+.entry-title{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-meta{font-size:.74rem;color:var(--text2);margin-top:2px}
+.entry-dur{font-size:.76rem;font-weight:700;padding:3px 9px;background:var(--surface);border-radius:99px;color:var(--text2);flex-shrink:0}
+.entry-actions{display:flex;gap:4px;flex-shrink:0}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;color:var(--text2)}
+.empty-icon{font-size:2.5rem;margin-bottom:12px;opacity:.6}
+.empty h3{font-size:1rem;margin-bottom:6px;color:var(--text)}
+.empty p{font-size:.82rem;color:var(--muted)}
+.meth-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;display:flex;flex-direction:column;gap:8px;transition:all .18s;box-shadow:var(--sh0)}
+.meth-card:hover{box-shadow:var(--sh1);transform:translateY(-1px)}
+.meth-name{font-weight:700;font-size:.95rem}
+.meth-for{font-size:.74rem;color:var(--accent);font-weight:600}
+.cal-cell{min-height:72px;border-radius:var(--r1);padding:6px;background:var(--bg);border:1.5px solid transparent;transition:all .15s;cursor:pointer}
+.cal-cell:hover{border-color:var(--accent);background:var(--acc-soft)}
+.cal-cell.today{border-color:var(--accent)!important;background:var(--acc-soft)!important}
+.cal-cell.other{opacity:.45}
+.cal-cell.drag-over{background:var(--acc-soft2)!important;border-color:var(--accent)!important}
+.cal-date{font-size:.76rem;font-weight:700;margin-bottom:3px;line-height:1}
+.cal-ev{font-size:.62rem;padding:2px 4px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;cursor:pointer;color:#fff}
+.cal-ev.gelernt{opacity:.7}
+.cal-more{font-size:.6rem;color:var(--muted);font-weight:700}
+.thema-row{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--border);border-radius:var(--r1);margin-bottom:6px;background:var(--bg)}
+.thema-done{text-decoration:line-through;color:var(--muted)}
+.sem-row{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--border);border-radius:var(--r1);margin-bottom:6px;background:var(--bg)}
+.weight-chip{font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--acc-soft);color:var(--accent);margin-left:4px}
+</style>
 
 <script>
-/* ═══════════════════════════════════════════════════════
-   StudyFlow v3 — Main JS
-═══════════════════════════════════════════════════════ */
-
 const SF = {
   user: null, faecher: [], noten: [], methoden: [],
   eintraege: [], themen: [], kalender: [], semester: [],
-  charts: {}, selColor: '#CBA6F7', curPage: 'dashboard',
-};
-
-const PAGE_TITLES = { dashboard:'Übersicht', noten:'Noten', lernen:'Lernen', kalender:'Planung', statistiken:'Statistiken', methoden:'Lernmethoden', einstellungen:'Einstellungen' };
-const PAGE_ACTIONS = {
-  noten: `<button class="btn btn-s btn-sm" onclick="openAddFach()">+ Fach</button><button class="btn btn-p btn-sm" onclick="openAddNote()">+ Note</button>`,
-  lernen: `<button class="btn btn-s btn-sm" onclick="openThemenModal()">Themen</button><button class="btn btn-p btn-sm" onclick="openAddLernen()">+ Eintrag</button>`,
-  kalender: `<button class="btn btn-p btn-sm" onclick="openAddEvent()">+ Termin</button>`,
-  methoden: `<button class="btn btn-p btn-sm" onclick="openMethodeModal()">+ Eigene Methode</button>`,
+  charts: {}, selColor: '#EF4444', selMethColor: '#8839ef', curPage: 'dashboard',
 };
 
 /* ── API ──────────────────────────────────────────────── */
@@ -481,10 +570,9 @@ async function api(method, path, data) {
 /* ── INIT ─────────────────────────────────────────────── */
 async function init() {
   applyTheme();
-  buildColorDots();
+  buildColorDots('fach-cdots', 'selColor');
   document.getElementById('login-pw').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('reg-pw').addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
-
   const me = await api('GET', '/me');
   if (!me.logged_in) {
     showLanding();
@@ -509,13 +597,12 @@ function setUserUI() {
   const u = SF.user?.username || '';
   const savedPic = localStorage.getItem('sf-pic');
   const av = document.getElementById('sidebar-uav');
-  if (av) { av.innerHTML = savedPic ? `<img src="${savedPic}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">` : u[0]?.toUpperCase() || '?'; }
-  const un = document.getElementById('sidebar-uname'); if(un) un.textContent = u;
-  const su = document.getElementById('settings-uname'); if(su) su.textContent = u;
+  if (av) { av.innerHTML = savedPic ? `<img src="${savedPic}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">` : (u[0]?.toUpperCase() || '?'); }
+  ['sidebar-uname','settings-uname'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=u;});
   const pi = document.getElementById('profile-initials'); if(pi) pi.textContent = u[0]?.toUpperCase() || '?';
   const pimg = document.getElementById('profile-img');
-  if (pimg && savedPic) { pimg.src = savedPic; pimg.style.display = 'block'; if(pi) pi.style.display = 'none'; }
-  syncThemeToggles();
+  if (pimg && savedPic) { pimg.src=savedPic; pimg.style.display='block'; if(pi)pi.style.display='none'; }
+  const td = document.getElementById('toggle-dark'); if(td) td.checked = localStorage.getItem('sf-dark')==='1';
 }
 
 async function loadAll() {
@@ -531,368 +618,297 @@ async function loadAll() {
   SF.themen    = Array.isArray(t)?t:[];
   SF.kalender  = Array.isArray(k)?k:[];
   SF.semester  = Array.isArray(s)?s:[];
-  fillFachDrops(); fillMethodeDrops(); fillSettingsThemaFach(); fillSemesterDrops();
+  fillFachDrops(); fillMethodeDrops(); fillSemesterDrops();
+  fillSettingsThemaFach();
 }
 
-/* ── LOGIN / REGISTER / LOGOUT ────────────────────────── */
+/* ── AUTH ─────────────────────────────────────────────── */
 async function doLogin() {
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pw').value;
   const err = document.getElementById('login-err');
-  if (!u||!p) { showErr(err,'Bitte beide Felder ausfüllen'); return; }
-  const r = await api('POST', '/login', {username:u, password:p});
-  if (r.success) {
-    document.getElementById('login-user').value = '';
-    document.getElementById('login-pw').value = '';
-    if(err) err.style.display='none';
-    SF.user = r;
-    setUserUI();
-    await loadAll();
-    closeModal('login');
-    showApp();
-    showPage('dashboard');
-    toast('Willkommen zurück, '+u+'!', 'ok');
-  } else { showErr(err, r.message||'Login fehlgeschlagen'); }
+  if(!u||!p){showErr(err,'Bitte beide Felder ausfüllen');return;}
+  const r = await api('POST','/login',{username:u,password:p});
+  if(r.success){
+    document.getElementById('login-user').value='';document.getElementById('login-pw').value='';
+    if(err)err.style.display='none';
+    SF.user=r;setUserUI();await loadAll();closeModal('login');showApp();showPage('dashboard');
+    toast('Willkommen zurück, '+u+'!','ok');
+  } else showErr(err,r.message||'Login fehlgeschlagen');
 }
-
 async function doRegister() {
-  const u = document.getElementById('reg-user').value.trim();
-  const e = document.getElementById('reg-email').value.trim();
-  const p = document.getElementById('reg-pw').value;
-  const err = document.getElementById('reg-err');
-  if (!u||!p) { showErr(err,'Benutzername und Passwort erforderlich'); return; }
-  if (p.length<6) { showErr(err,'Passwort muss mind. 6 Zeichen haben'); return; }
-  const r = await api('POST', '/register', {username:u, email:e, password:p});
-  if (r.success) {
+  const u=document.getElementById('reg-user').value.trim();
+  const e=document.getElementById('reg-email').value.trim();
+  const p=document.getElementById('reg-pw').value;
+  const err=document.getElementById('reg-err');
+  if(!u||!p){showErr(err,'Benutzername und Passwort erforderlich');return;}
+  if(p.length<6){showErr(err,'Passwort mind. 6 Zeichen');return;}
+  const r=await api('POST','/register',{username:u,email:e,password:p});
+  if(r.success){
     ['reg-user','reg-email','reg-pw'].forEach(id=>document.getElementById(id).value='');
-    if(err) err.style.display='none';
-    SF.user = r;
-    setUserUI();
-    await loadAll();
-    closeModal('register');
-    showApp();
-    showPage('dashboard');
-    toast('Willkommen, '+u+'! Deine Fächer sind bereit.', 'ok');
-  } else { showErr(err, r.message||'Registrierung fehlgeschlagen'); }
+    if(err)err.style.display='none';
+    SF.user=r;setUserUI();await loadAll();closeModal('register');showApp();showPage('dashboard');
+    toast('Willkommen, '+u+'!','ok');
+  } else showErr(err,r.message||'Registrierung fehlgeschlagen');
 }
-
 async function doLogout() {
   await api('POST','/logout');
-  SF.user=null; SF.faecher=[]; SF.noten=[]; SF.methoden=[];
-  SF.eintraege=[]; SF.themen=[]; SF.kalender=[];
+  SF.user=null;SF.faecher=[];SF.noten=[];SF.methoden=[];
+  SF.eintraege=[];SF.themen=[];SF.kalender=[];SF.semester=[];
   Object.values(SF.charts).forEach(c=>{try{c.destroy();}catch{}});
   SF.charts={};
   showLanding();
 }
 
-/* ── PAGE NAVIGATION ──────────────────────────────────── */
+/* ── PAGE NAV ─────────────────────────────────────────── */
+const PAGE_TITLES={dashboard:'Übersicht',noten:'Noten',lernen:'Lernen',kalender:'Planung',statistiken:'Statistiken',methoden:'Lernmethoden',einstellungen:'Einstellungen'};
 function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.style.display='none');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const pg = document.getElementById('page-'+name);
-  if (pg) pg.style.display='block';
-  const nv = document.getElementById('nv-'+name);
-  if (nv) nv.classList.add('active');
-  document.getElementById('topbar-title').textContent = PAGE_TITLES[name]||name;
-  const actions = document.getElementById('topbar-actions');
-  // Keep theme slider, add page actions before it
-  const sliderHTML = actions.innerHTML.includes('theme-slider-wrap') ?
-    actions.querySelector('.theme-slider-wrap')?.outerHTML || '' : '';
-  const pageActionsHTML = PAGE_ACTIONS[name] || '';
-  actions.innerHTML = pageActionsHTML + `
-    <div class="theme-slider-wrap" onclick="toggleTheme()" style="margin-left:4px">
-      <span class="theme-slider-icon" style="font-size:.8rem">☀️</span>
-      <label class="theme-slider-toggle" onclick="event.stopPropagation()">
-        <input type="checkbox" id="app-dark-toggle" onchange="toggleTheme()">
-        <span class="theme-slider-track"></span>
-      </label>
-      <span class="theme-slider-icon" style="font-size:.8rem">🌙</span>
-    </div>`;
-  syncThemeToggles();
-  SF.curPage = name;
-  if (window.innerWidth<=900) closeSidebar();
-  const renders = {
-    dashboard: renderDashboard,
-    noten: renderNoten,
-    lernen: () => { renderLernen(); setTodayDates(); fillFachDrops(); fillMethodeDrops(); },
-    kalender: () => { renderKalender(); },
-    statistiken: renderStatistiken,
-    methoden: renderMethoden,
-    einstellungen: renderSettingsPage,
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+name); if(pg)pg.style.display='block';
+  const nv=document.getElementById('nv-'+name); if(nv)nv.classList.add('active');
+  document.getElementById('topbar-title').textContent=PAGE_TITLES[name]||name;
+  SF.curPage=name;
+  if(window.innerWidth<=900)closeSidebar();
+  const renders={
+    dashboard:renderDashboard,noten:renderNoten,
+    lernen:()=>{renderLernen();setTodayDates();},
+    kalender:renderKalender,statistiken:renderStatistiken,
+    methoden:renderMethoden,einstellungen:renderSettingsPage,
   };
-  if (renders[name]) renders[name]();
+  if(renders[name])renders[name]();
 }
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');}
 
 /* ── THEME ────────────────────────────────────────────── */
 function applyTheme() {
-  const dark = localStorage.getItem('sf-dark') !== '0'; // default dark
-  document.documentElement.setAttribute('data-theme', dark?'dark':'light');
-  syncThemeToggles();
-}
-function syncThemeToggles() {
-  const dark = localStorage.getItem('sf-dark') !== '0';
-  ['land-dark-toggle','app-dark-toggle','settings-dark-toggle'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.checked=dark;
+  const dark=localStorage.getItem('sf-dark')==='1';
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  ['toggle-dark','app-theme-toggle','land-theme-toggle'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.checked=dark;
   });
 }
 function toggleTheme() {
-  const dark = localStorage.getItem('sf-dark') !== '0';
-  localStorage.setItem('sf-dark', dark?'0':'1');
+  const dark=localStorage.getItem('sf-dark')==='1';
+  localStorage.setItem('sf-dark',dark?'0':'1');
   applyTheme();
-  Object.values(SF.charts).forEach(c=>{try{c.destroy();}catch{}});
-  SF.charts={};
-  const renders={statistiken:renderStatistiken,dashboard:renderDashboard};
-  if(renders[SF.curPage]) renders[SF.curPage]();
+  Object.values(SF.charts).forEach(c=>{try{c.destroy();}catch{}});SF.charts={};
+  if(SF.curPage==='statistiken')renderStatistiken();
+  if(SF.curPage==='dashboard')renderDashboard();
 }
-
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
 
 /* ── MODAL ────────────────────────────────────────────── */
-function openModal(name) {
-  const el = document.getElementById('modal-'+name);
-  if (el) { el.classList.add('open'); setTimeout(()=>el.querySelector('input,select,textarea')?.focus(),100); }
-}
-function closeModal(name) {
-  const el = document.getElementById('modal-'+name); if(el) el.classList.remove('open');
-}
-function closeModalOutside(e, name) { if(e.target===document.getElementById('modal-'+name)) closeModal(name); }
+function openModal(name){const el=document.getElementById('modal-'+name);if(el){el.classList.add('open');setTimeout(()=>el.querySelector('input,select,textarea')?.focus(),100);}}
+function closeModal(name){const el=document.getElementById('modal-'+name);if(el)el.classList.remove('open');}
+function closeModalOutside(e,name){if(e.target===document.getElementById('modal-'+name))closeModal(name);}
 
 /* ── TOAST ────────────────────────────────────────────── */
-function toast(msg, type='ok') {
-  const w = document.getElementById('toast-wrap');
-  const t = document.createElement('div'); t.className='toast '+type; t.textContent=msg;
-  w.appendChild(t); setTimeout(()=>t.remove(),3200);
-}
+function toast(msg,type='ok'){const w=document.getElementById('toast-wrap');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;w.appendChild(t);setTimeout(()=>t.remove(),3200);}
 
 /* ── HELPERS ──────────────────────────────────────────── */
 function showErr(el,msg){if(el){el.style.display='block';el.textContent=msg;}}
 function fmtDate(d){if(!d)return'–';const p=d.split('-');return p[2]+'.'+p[1]+'.'+p[0];}
-function fmtMin(m){if(!m||m===0)return'0 Min.';if(m<60)return m+' Min.';const h=Math.floor(m/60),r=m%60;return h+'h '+(r?r+'m':'');}
+function fmtMin(m){if(!m)return'0 Min.';if(m<60)return m+' Min.';const h=Math.floor(m/60);const min=m%60;return h+'h'+(min?' '+min+'m':'');}
 function getCS(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
-function setTodayDates(){const t=new Date().toISOString().split('T')[0];['note-datum','lernen-datum','quick-datum','event-datum'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=t;});}
+function setTodayDates(){const t=new Date().toISOString().split('T')[0];['note-datum','lernen-datum','quick-datum','event-datum'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=t;});}
 function destroyChart(id){if(SF.charts[id]){try{SF.charts[id].destroy();}catch{}delete SF.charts[id];}}
 function emptyHTML(icon,title,sub){return`<div class="empty"><div class="empty-icon">${icon}</div><h3>${title}</h3><p>${sub}</p></div>`;}
 
-function entryHTML(e, showActions) {
-  const fach = SF.faecher.find(f=>f.id===e.fach_id)||{};
-  const fname = e.fach_name||fach.name||'Unbekannt';
-  const ffarbe = e.fach_farbe||fach.farbe||'#999';
-  const meth = SF.methoden.find(m=>m.id===e.methode_id);
-  const actions = showActions?`<div class="entry-actions"><button class="btn-icon" onclick="openEditLernen(${e.id})" title="Bearbeiten">✏️</button><button class="btn-icon" onclick="delEintrag(${e.id})" title="Löschen">🗑️</button></div>`:'';
-  return `<div class="entry-item"><div class="entry-dot" style="background:${ffarbe}"></div><div class="entry-info"><div class="entry-title">${e.titel}</div><div class="entry-meta">${fname} · ${fmtDate(e.datum)}${meth?' · '+meth.name:''}</div></div><div class="entry-dur">${fmtMin(e.dauer_minuten)}</div>${actions}</div>`;
+function entryHTML(e,showActions){
+  const fach=SF.faecher.find(f=>f.id===e.fach_id)||{};
+  const fname=e.fach_name||fach.name||'Unbekannt';
+  const ffarbe=e.fach_farbe||fach.farbe||'#999';
+  const meth=SF.methoden.find(m=>m.id===e.methode_id);
+  const dur=fmtMin(e.dauer_minuten);
+  const actions=showActions?`<div class="entry-actions"><button class="btn-icon" onclick="openEditLernen(${e.id})">✏️</button><button class="btn-icon" onclick="delEintrag(${e.id})">🗑️</button></div>`:'';
+  return`<div class="entry-item"><div class="entry-dot" style="background:${ffarbe}"></div><div class="entry-info"><div class="entry-title">${e.titel}</div><div class="entry-meta">${fname} · ${fmtDate(e.datum)}${meth?' · '+meth.name:''}</div></div><div class="entry-dur">${dur}</div>${actions}</div>`;
 }
 
-/* ── CHART HELPERS ────────────────────────────────────── */
 function chScale(){return{ticks:{color:getCS('--text2'),font:{family:'Outfit',weight:'600',size:11}},grid:{color:getCS('--border')}};}
-function chOpts(label){return{responsive:true,plugins:{legend:{display:false},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'}}},scales:{x:chScale(),y:chScale()}};}
+function chOpts(label){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'}}},scales:{x:chScale(),y:chScale()}};}
 
 /* ── DROPDOWNS ────────────────────────────────────────── */
-function fillFachDrops() {
-  const opts = SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+function fillFachDrops(){
+  const opts=SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
   ['note-fach','lernen-fach','quick-fach','thema-fach','timer-fach'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.innerHTML=opts||'<option value="">— Kein Fach —</option>';
+    const el=document.getElementById(id);if(el)el.innerHTML=opts||'<option value="">— Kein Fach —</option>';
   });
   const ef=document.getElementById('event-fach');
-  if(ef) ef.innerHTML='<option value="">Kein Fach</option>'+opts;
+  if(ef)ef.innerHTML='<option value="">Kein Fach</option>'+opts;
 }
 function fillMethodeDrops(){
   const el=document.getElementById('lernen-methode');
-  if(el) el.innerHTML='<option value="">— Methode —</option>'+SF.methoden.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  if(el)el.innerHTML='<option value="">— Methode —</option>'+SF.methoden.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+}
+function fillSemesterDrops(){
+  const sems=SF.semester.length?SF.semester:[{id:'1',name:'Semester 1'},{id:'2',name:'Semester 2'}];
+  const opts=sems.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  const el=document.getElementById('note-sem');if(el)el.innerHTML=opts;
 }
 function fillSettingsThemaFach(){
   const sel=document.getElementById('settings-thema-fach');
-  if(!sel||!SF.faecher.length) return;
+  if(!sel||!SF.faecher.length)return;
   sel.innerHTML=SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
   renderSettingsThemen();
 }
-function fillSemesterDrops() {
-  const opts = '<option value="">— Kein Semester —</option>' + SF.semester.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-  ['note-semester-label'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.innerHTML=opts;
-  });
+
+/* ── COLOR DOTS ───────────────────────────────────────── */
+const PRESET_COLORS=['#EF4444','#3B82F6','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#84CC16','#F97316','#6366F1','#cba6f7','#89b4fa','#a6e3a1','#f38ba8'];
+function buildColorDots(containerId,stateKey){
+  const el=document.getElementById(containerId);if(!el)return;
+  el.innerHTML=PRESET_COLORS.map(c=>`<div class="cdot${c===SF[stateKey]?' sel':''}" style="background:${c}" onclick="selColor('${c}','${containerId}','${stateKey}')"></div>`).join('');
 }
-
-/* ── SEARCHABLE THEMA DROPDOWN ────────────────────────── */
-let _themaDropdownCtx = {}; // stores fach-filtered themen per context
-
-function openThemenDropdown(ctx) {
-  const fid = ctx==='note' ? +document.getElementById('note-fach')?.value :
-              ctx==='lernen' ? +document.getElementById('lernen-fach')?.value : 0;
-  renderThemenDropdown(ctx, fid, document.getElementById(ctx+'-thema-search')?.value||'');
-  document.getElementById(ctx+'-thema-dropdown').style.display='block';
-}
-
-function filterThemenDropdown(ctx) {
-  const fid = ctx==='note' ? +document.getElementById('note-fach')?.value :
-              ctx==='lernen' ? +document.getElementById('lernen-fach')?.value : 0;
-  const q = document.getElementById(ctx+'-thema-search')?.value||'';
-  renderThemenDropdown(ctx, fid, q);
-  document.getElementById(ctx+'-thema-dropdown').style.display='block';
-}
-
-function renderThemenDropdown(ctx, fid, query) {
-  const dd = document.getElementById(ctx+'-thema-dropdown'); if(!dd) return;
-  const ts = SF.themen.filter(t => (!fid || t.fach_id===fid) && (!query || t.name.toLowerCase().includes(query.toLowerCase())));
-  let html = ts.map(t=>`<div class="sd-opt" onmousedown="selectThemaDropdown('${ctx}',${t.id},'${escQ(t.name)}')">${t.name}</div>`).join('');
-  // Check if we should show "create" option
-  const exactMatch = SF.themen.some(t=>t.name.toLowerCase()===query.toLowerCase()&&(!fid||t.fach_id===fid));
-  if(query && !exactMatch) {
-    html += `<div class="sd-create" onmousedown="createAndSelectThema('${ctx}','${escQ(query)}')">+ "${query}" neu erstellen</div>`;
-  }
-  if(!html) html = `<div class="sd-empty">Kein Thema gefunden</div>`;
-  dd.innerHTML = html;
-}
-
-function escQ(s) { return s.replace(/'/g,"\'").replace(/"/g,'&quot;'); }
-
-function selectThemaDropdown(ctx, id, name) {
-  document.getElementById(ctx+'-thema-id').value = id;
-  document.getElementById(ctx+'-thema-search').value = name;
-  document.getElementById(ctx+'-thema-dropdown').style.display = 'none';
-}
-
-async function createAndSelectThema(ctx, name) {
-  const fid = ctx==='note' ? +document.getElementById('note-fach')?.value :
-              ctx==='lernen' ? +document.getElementById('lernen-fach')?.value : 0;
-  if(!fid) { toast('Bitte zuerst ein Fach auswählen','err'); return; }
-  const r = await api('POST','/themen',{fach_id:fid,name});
-  if(r.id) {
-    SF.themen.push(r);
-    selectThemaDropdown(ctx, r.id, name);
-    toast('Thema erstellt','ok');
-  }
-}
-
-function delayCloseDropdown(ctx) {
-  setTimeout(()=>{
-    const dd=document.getElementById(ctx+'-thema-dropdown');
-    if(dd) dd.style.display='none';
-  },200);
+function selColor(c,containerId,stateKey){
+  SF[stateKey]=c;
+  const el=document.getElementById(containerId);if(!el)return;
+  el.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
+  const dots=el.querySelectorAll('.cdot');
+  const idx=PRESET_COLORS.indexOf(c);
+  if(dots[idx])dots[idx].classList.add('sel');
 }
 
 /* ── FACH ─────────────────────────────────────────────── */
-const PRESET_COLORS=['#CBA6F7','#89B4FA','#A6E3A1','#FAB387','#F38BA8','#94E2D5','#F9E2AF','#89DCEB','#B4BEFE','#EBA0AC'];
-function buildColorDots(){
-  const el=document.getElementById('fach-cdots'); if(!el) return;
-  el.innerHTML=PRESET_COLORS.map(c=>`<div class="cdot${c===SF.selColor?' sel':''}" style="background:${c}" onclick="selColor('${c}')"></div>`).join('');
-}
-function selColor(c){
-  SF.selColor=c;
-  document.querySelectorAll('.cdot').forEach(d=>d.classList.toggle('sel',d.style.background===c));
-}
-function openAddFach(){buildColorDots();document.getElementById('new-fach-name').value='';openModal('fach');}
+function openAddFach(){buildColorDots('fach-cdots','selColor');document.getElementById('new-fach-name').value='';openModal('fach');}
 async function saveFach(){
   const name=document.getElementById('new-fach-name').value.trim();
   if(!name){toast('Bitte Fachname eingeben','err');return;}
   const r=await api('POST','/faecher',{name,farbe:SF.selColor});
-  if(r.id){
-    SF.faecher.push(r);fillFachDrops();fillSettingsThemaFach();
-    document.getElementById('new-fach-name').value='';
-    closeModal('fach');toast('Fach "'+name+'" hinzugefügt','ok');
-    if(SF.curPage==='noten') renderNoten();
-    if(SF.curPage==='einstellungen') renderSettingsFaecher();
-  }
-}
-async function renameFach(fid){
-  const f=SF.faecher.find(x=>x.id===fid); if(!f) return;
-  const name=prompt('Neuer Name für "'+f.name+'":', f.name);
-  if(!name||name===f.name) return;
-  await api('PUT','/faecher/'+fid,{name,farbe:f.farbe});
-  SF.faecher=SF.faecher.map(x=>x.id===fid?{...x,name}:x);
-  SF.noten=SF.noten.map(n=>n.fach_id===fid?{...n,fach_name:name}:n);
-  SF.eintraege=SF.eintraege.map(e=>e.fach_id===fid?{...e,fach_name:name}:e);
-  fillFachDrops();fillSettingsThemaFach();
-  toast('Fach umbenannt','ok');
-  if(SF.curPage==='noten') renderNoten();
-  if(SF.curPage==='einstellungen') renderSettingsFaecher();
+  if(r.id){SF.faecher.push(r);fillFachDrops();fillSettingsThemaFach();document.getElementById('new-fach-name').value='';closeModal('fach');toast('Fach "'+name+'" hinzugefügt','ok');if(SF.curPage==='noten')renderNoten();if(SF.curPage==='einstellungen')renderSettingsFaecher();}
 }
 async function delFach(fid){
-  if(!confirm('Fach und alle zugehörigen Daten löschen?')) return;
+  if(!confirm('Fach und alle zugehörigen Daten löschen?'))return;
   await api('DELETE','/faecher/'+fid);
-  SF.faecher=SF.faecher.filter(f=>f.id!==fid);
-  SF.noten=SF.noten.filter(n=>n.fach_id!==fid);
-  SF.eintraege=SF.eintraege.filter(e=>e.fach_id!==fid);
-  fillFachDrops();fillSettingsThemaFach();
-  toast('Fach gelöscht','ok');
-  if(SF.curPage==='noten') renderNoten();
-  if(SF.curPage==='einstellungen') renderSettingsFaecher();
+  SF.faecher=SF.faecher.filter(f=>f.id!==fid);SF.noten=SF.noten.filter(n=>n.fach_id!==fid);SF.eintraege=SF.eintraege.filter(e=>e.fach_id!==fid);
+  fillFachDrops();fillSettingsThemaFach();toast('Fach gelöscht','ok');
+  if(SF.curPage==='noten')renderNoten();if(SF.curPage==='einstellungen')renderSettingsFaecher();
+}
+
+/* ── NOTE THEMA DROPDOWN ──────────────────────────────── */
+let _noteThemenRaw=[];
+function loadNoteThemen(){
+  const fid=+document.getElementById('note-fach')?.value;
+  _noteThemenRaw=SF.themen.filter(t=>t.fach_id===fid&&!t.abgeschlossen);
+  document.getElementById('note-thema-search').value='';
+  document.getElementById('note-thema-id').value='';
+  filterNoteThemen();
+}
+function openNoteThemenDropdown(){
+  filterNoteThemen();
+  document.getElementById('note-thema-dropdown').classList.add('open');
+}
+function closeNoteThemenDropdown(){
+  document.getElementById('note-thema-dropdown').classList.remove('open');
+}
+function filterNoteThemen(){
+  const q=document.getElementById('note-thema-search').value.toLowerCase();
+  const list=document.getElementById('note-thema-dropdown');
+  const fid=+document.getElementById('note-fach')?.value;
+  let items=_noteThemenRaw.filter(t=>t.name.toLowerCase().includes(q));
+  let html=items.map(t=>`<div class="dropdown-item" onmousedown="selectNoteThema(${t.id},'${t.name.replace(/'/g,"\\'")}')"><span>${t.name}</span></div>`).join('');
+  if(q&&!items.find(t=>t.name.toLowerCase()===q)){
+    html+=`<div class="dropdown-item create-new" onmousedown="createAndSelectNoteThema('${q.replace(/'/g,"\\'")}')">+ "${q}" neu erstellen</div>`;
+  }
+  if(!html)html='<div class="dropdown-item" style="color:var(--muted)">Keine Themen gefunden</div>';
+  list.innerHTML=html;
+  list.classList.add('open');
+}
+function selectNoteThema(tid,name){
+  document.getElementById('note-thema-search').value=name;
+  document.getElementById('note-thema-id').value=tid;
+  closeNoteThemenDropdown();
+}
+async function createAndSelectNoteThema(name){
+  const fid=+document.getElementById('note-fach')?.value;
+  if(!fid){toast('Bitte zuerst ein Fach wählen','err');return;}
+  const r=await api('POST','/themen',{fach_id:fid,name});
+  if(r.id){SF.themen.push(r);_noteThemenRaw.push(r);selectNoteThema(r.id,name);toast('Thema erstellt','ok');}
 }
 
 /* ── NOTEN ────────────────────────────────────────────── */
 function renderNoten(){
-  const el=document.getElementById('noten-list'); if(!el) return;
+  const el=document.getElementById('noten-list');if(!el)return;
   if(!SF.faecher.length){el.innerHTML=emptyHTML('🎓','Keine Fächer','Gehe zu Einstellungen und füge dein erstes Fach hinzu.');return;}
   el.innerHTML=SF.faecher.map(fach=>{
     const fn=SF.noten.filter(n=>n.fach_id===fach.id);
     // Weighted average
-    const totalW=fn.reduce((s,n)=>s+(n.gewichtung||1),0);
-    const avg=fn.length&&totalW>0?(fn.reduce((s,n)=>s+n.note*(n.gewichtung||1),0)/totalW).toFixed(2):null;
+    const wsum=fn.reduce((s,n)=>s+n.note*(n.gewichtung||1),0);
+    const wdiv=fn.reduce((s,n)=>s+(n.gewichtung||1),0);
+    const avg=fn.length&&wdiv>0?(wsum/wdiv).toFixed(2):null;
     const ac=!avg?'avg-none':+avg>=5?'avg-good':+avg>=4?'avg-ok':'avg-bad';
     const rows=fn.length
       ?fn.map(n=>{
         const nc=n.note>=5?'nb-good':n.note>=4?'nb-ok':'nb-bad';
-        const wBadge=n.gewichtung&&n.gewichtung!==1?`<span class="weight-badge">×${n.gewichtung}</span>`:'';
-        const semName=n.semester_name||'';
-        const themaName=n.thema_name||n.titel||'–';
+        const w=n.gewichtung||1;
+        const wLabel=w!==1?`<span class="weight-chip">${w}x</span>`:'';
         return`<tr>
           <td><div class="nb ${nc}">${n.note}</div></td>
-          <td>${themaName}${wBadge}</td>
+          <td>${n.thema_name||n.titel||'–'}${wLabel}</td>
           <td>${fmtDate(n.datum)}</td>
-          <td>${semName?`<span class="chip">${semName}</span>`:''}</td>
-          <td><div style="display:flex;gap:4px;justify-content:flex-end"><button class="btn-icon" onclick="openEditNote(${n.id})" title="Bearbeiten">✏️</button><button class="btn-icon" onclick="delNote(${n.id})" title="Löschen">🗑️</button></div></td>
-        </tr>`;
+          <td><span class="chip">${n.semester||'Sem. 1'}</span></td>
+          <td><div style="display:flex;gap:4px;justify-content:flex-end">
+            <button class="btn-icon" onclick="openEditNote(${n.id})">✏️</button>
+            <button class="btn-icon" onclick="delNote(${n.id})">🗑️</button>
+          </div></td></tr>`;
       }).join('')
-      :`<tr><td colspan="5" style="text-align:center;padding:28px 20px"><div style="color:var(--text3);font-size:.84rem">Noch keine Noten</div><button class="btn btn-p btn-sm" style="margin-top:10px" onclick="openAddNoteForFach(${fach.id})">+ Erste Note</button></td></tr>`;
-    return`<div class="fach-card" id="fc-${fach.id}"><div class="fach-hd" onclick="toggleFach(${fach.id})"><div class="fach-hd-l"><div class="fach-bar" style="background:${fach.farbe}"></div><div><div class="fach-name">${fach.name}</div><div class="fach-cnt">${fn.length} Note${fn.length!==1?'n':''}</div></div><div class="avg ${ac}">⌀ ${avg||'–'}</div></div><span class="fach-chev">▶</span></div><div class="fach-body"><table class="notes-tbl"><thead><tr><th>Note</th><th>Thema</th><th>Datum</th><th>Semester</th><th style="text-align:right">Aktionen</th></tr></thead><tbody>${rows}</tbody></table><div class="fach-foot"><button class="btn btn-p btn-sm" onclick="openAddNoteForFach(${fach.id})">+ Note hinzufügen</button></div></div></div>`;
+      :`<tr><td colspan="5" style="text-align:center;padding:28px 20px"><div style="color:var(--text3);font-size:.84rem">Noch keine Noten</div></td></tr>`;
+    return`<div class="fach-card" id="fc-${fach.id}">
+      <div class="fach-hd" onclick="toggleFach(${fach.id})">
+        <div class="fach-hd-l">
+          <div class="fach-bar" style="background:${fach.farbe}"></div>
+          <div><div class="fach-name">${fach.name}</div><div class="fach-cnt">${fn.length} Note${fn.length!==1?'n':''}</div></div>
+          <div class="avg ${ac}">⌀ ${avg||'–'}</div>
+        </div>
+        <span class="fach-chev">▶</span>
+      </div>
+      <div class="fach-body">
+        <table class="notes-tbl"><thead><tr><th>Note</th><th>Thema/Titel</th><th>Datum</th><th>Semester</th><th style="text-align:right">Aktionen</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+        <div class="fach-foot"><button class="btn btn-p btn-sm" onclick="openAddNoteForFach(${fach.id})">+ Note hinzufügen</button></div>
+      </div>
+    </div>`;
   }).join('');
 }
 function toggleFach(id){document.getElementById('fc-'+id)?.classList.toggle('open');}
 function openAddNote(){
   document.getElementById('note-edit-id').value='';
   document.getElementById('modal-note-title').textContent='Note hinzufügen';
-  document.getElementById('note-val').value='';
-  document.getElementById('note-gewichtung').value='1';
+  ['note-val'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('note-gewichtung').value='1.0';
   document.getElementById('note-thema-search').value='';
   document.getElementById('note-thema-id').value='';
   document.getElementById('note-datum').value=new Date().toISOString().split('T')[0];
-  fillSemesterDrops();
+  fillSemesterDrops();loadNoteThemen();
   openModal('note');
 }
-function openAddNoteForFach(fid){openAddNote();document.getElementById('note-fach').value=fid; loadThemenNote();}
+function openAddNoteForFach(fid){openAddNote();document.getElementById('note-fach').value=fid;loadNoteThemen();}
 function openEditNote(nid){
-  const n=SF.noten.find(x=>x.id===nid); if(!n) return;
+  const n=SF.noten.find(x=>x.id===nid);if(!n)return;
   document.getElementById('note-edit-id').value=nid;
   document.getElementById('modal-note-title').textContent='Note bearbeiten';
   document.getElementById('note-fach').value=n.fach_id;
   document.getElementById('note-val').value=n.note;
-  document.getElementById('note-gewichtung').value=n.gewichtung||1;
-  document.getElementById('note-thema-search').value=n.thema_name||n.titel||'';
+  document.getElementById('note-gewichtung').value=n.gewichtung||1.0;
+  document.getElementById('note-thema-search').value=n.thema_name||'';
   document.getElementById('note-thema-id').value=n.thema_id||'';
-  document.getElementById('note-datum').value=n.datum;
   fillSemesterDrops();
-  document.getElementById('note-semester-label').value=n.semester_label_id||'';
+  document.getElementById('note-sem').value=n.semester||'Semester 1';
+  document.getElementById('note-datum').value=n.datum;
+  loadNoteThemen();
   openModal('note');
-}
-function loadThemenNote(){
-  // Just clear thema selection when fach changes
-  document.getElementById('note-thema-search').value='';
-  document.getElementById('note-thema-id').value='';
 }
 async function saveNote(){
   const fid=+document.getElementById('note-fach').value;
   const val=+document.getElementById('note-val').value;
-  const gewichtung=+document.getElementById('note-gewichtung').value||1;
+  const gew=+document.getElementById('note-gewichtung').value||1.0;
+  const sem=document.getElementById('note-sem').value;
   const thema_id=+document.getElementById('note-thema-id').value||null;
-  const thema_search=document.getElementById('note-thema-search').value.trim();
+  const titel=document.getElementById('note-thema-search').value.trim();
   const datum=document.getElementById('note-datum').value;
-  const sem_id=+document.getElementById('note-semester-label').value||null;
   const eid=document.getElementById('note-edit-id').value;
   if(!fid||!val||!datum){toast('Fach, Note und Datum erforderlich','err');return;}
   if(val<1||val>6){toast('Note muss zwischen 1 und 6 sein','err');return;}
-  // Use thema_name as titel fallback
-  const titel=thema_search;
-  const payload={fach_id:fid,note:val,gewichtung,titel,thema_id,datum,semester_label_id:sem_id};
+  const payload={fach_id:fid,note:val,gewichtung:gew,thema_id,titel,datum,semester:sem};
   let r;
   if(eid){r=await api('PUT','/noten/'+eid,payload);if(r.id)SF.noten=SF.noten.map(n=>n.id===+eid?r:n);}
   else{r=await api('POST','/noten',payload);if(r.id)SF.noten.push(r);}
@@ -900,19 +916,19 @@ async function saveNote(){
   else toast('Fehler beim Speichern','err');
 }
 async function delNote(nid){
-  if(!confirm('Note löschen?')) return;
+  if(!confirm('Note löschen?'))return;
   await api('DELETE','/noten/'+nid);
   SF.noten=SF.noten.filter(n=>n.id!==nid);
-  toast('Note gelöscht','ok'); renderNoten();
+  toast('Note gelöscht','ok');renderNoten();
 }
 
 /* ── LERNEN ───────────────────────────────────────────── */
 const timer={running:false,sec:0,iv:null};
 function renderLernen(){
-  const el=document.getElementById('lernen-list'); if(!el) return;
+  const el=document.getElementById('lernen-list');if(!el)return;
   const ee=SF.eintraege.filter(e=>!e.geplant);
   const cnt=document.getElementById('lernen-count');
-  if(cnt) cnt.textContent=`${ee.length} Eintrag${ee.length!==1?'e':''}`;
+  if(cnt)cnt.textContent=`${ee.length} Eintrag${ee.length!==1?'e':''}`;
   el.innerHTML=ee.length?ee.map(e=>entryHTML(e,true)).join(''):emptyHTML('📚','Noch keine Einträge','Nutze den Timer oder den Schnelleintrag');
 }
 function updateTimerFachLabel(){const sel=document.getElementById('timer-fach');const lbl=document.getElementById('timer-fach-lbl');if(lbl&&sel)lbl.textContent=sel.options[sel.selectedIndex]?.text||'Kein Fach gewählt';}
@@ -923,7 +939,7 @@ function toggleTimer(){
 function updateTimerDisplay(){
   const h=Math.floor(timer.sec/3600),m=Math.floor((timer.sec%3600)/60),s=timer.sec%60;
   document.getElementById('timer-display').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  const offset=502.65*(1-Math.min(timer.sec/3600,1));
+  const total=Math.max(timer.sec,1);const offset=345*(1-Math.min(timer.sec/3600,1));
   const ring=document.getElementById('ring-fill');if(ring)ring.style.strokeDashoffset=offset;
 }
 function resetTimer(){clearInterval(timer.iv);timer.running=false;timer.sec=0;updateTimerDisplay();document.getElementById('timer-startstop').textContent='▶ Starten';document.getElementById('timer-state-lbl').textContent='Bereit';}
@@ -939,108 +955,62 @@ async function saveTimerEntry(){
 function loadThemenQuick(){const fid=+document.getElementById('quick-fach')?.value;const sel=document.getElementById('quick-thema');if(!sel)return;const ts=SF.themen.filter(t=>t.fach_id===fid&&!t.abgeschlossen);sel.innerHTML='<option value="">— Thema auswählen —</option>'+ts.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');}
 function applyThemaQuick(){const v=document.getElementById('quick-thema')?.value;if(v)document.getElementById('quick-titel').value=v;}
 async function quickSave(){
-  const fid=+document.getElementById('quick-fach').value;
-  const titel=document.getElementById('quick-titel').value.trim();
-  const dauer=+document.getElementById('quick-dauer').value;
-  const datum=document.getElementById('quick-datum').value;
+  const fid=+document.getElementById('quick-fach').value;const titel=document.getElementById('quick-titel').value.trim();
+  const dauer=+document.getElementById('quick-dauer').value;const datum=document.getElementById('quick-datum').value;
   if(!fid||!titel||!dauer||!datum){toast('Alle Pflichtfelder ausfüllen','err');return;}
   const r=await api('POST','/lerneintraege',{fach_id:fid,titel,dauer_minuten:dauer,datum,geplant:0});
   if(r.id){SF.eintraege.push(r);document.getElementById('quick-titel').value='';document.getElementById('quick-dauer').value='';renderLernen();toast('Eintrag gespeichert','ok');}
 }
 function openAddLernen(){
-  document.getElementById('lernen-edit-id').value='';
-  document.getElementById('lernen-modal-title').textContent='Lerneintrag';
+  document.getElementById('lernen-edit-id').value='';document.getElementById('lernen-modal-title').textContent='Lerneintrag';
   ['lernen-desc','lernen-dauer','lernen-titel'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('lernen-datum').value=new Date().toISOString().split('T')[0];
-  document.getElementById('lernen-thema-search').value='';
-  document.getElementById('lernen-thema-id').value='';
-  fillFachDrops();fillMethodeDrops();
+  const ts=document.getElementById('lernen-thema-sel');if(ts)ts.innerHTML='<option value="">— Thema auswählen —</option>';
   openModal('lernen');
 }
 function openEditLernen(eid){
-  const e=SF.eintraege.find(x=>x.id===eid); if(!e) return;
-  document.getElementById('lernen-edit-id').value=eid;
-  document.getElementById('lernen-modal-title').textContent='Eintrag bearbeiten';
-  document.getElementById('lernen-fach').value=e.fach_id;
-  document.getElementById('lernen-methode').value=e.methode_id||'';
-  document.getElementById('lernen-titel').value=e.titel;
-  document.getElementById('lernen-desc').value=e.beschreibung||'';
-  document.getElementById('lernen-dauer').value=e.dauer_minuten;
-  document.getElementById('lernen-datum').value=e.datum;
-  document.getElementById('lernen-thema-search').value=e.thema_name||'';
-  document.getElementById('lernen-thema-id').value=e.thema_id||'';
+  const e=SF.eintraege.find(x=>x.id===eid);if(!e)return;
+  document.getElementById('lernen-edit-id').value=eid;document.getElementById('lernen-modal-title').textContent='Eintrag bearbeiten';
+  document.getElementById('lernen-fach').value=e.fach_id;document.getElementById('lernen-methode').value=e.methode_id||'';
+  document.getElementById('lernen-titel').value=e.titel;document.getElementById('lernen-desc').value=e.beschreibung||'';
+  document.getElementById('lernen-dauer').value=e.dauer_minuten;document.getElementById('lernen-datum').value=e.datum;
   openModal('lernen');
 }
 async function saveLerneintrag(){
-  const fid=+document.getElementById('lernen-fach').value;
-  const mid=+document.getElementById('lernen-methode').value||null;
-  const thema_id=+document.getElementById('lernen-thema-id').value||null;
-  const titel=document.getElementById('lernen-titel').value.trim();
-  const desc=document.getElementById('lernen-desc').value.trim();
-  const dauer=+document.getElementById('lernen-dauer').value;
-  const datum=document.getElementById('lernen-datum').value;
+  const fid=+document.getElementById('lernen-fach').value;const mid=+document.getElementById('lernen-methode').value||null;
+  const titel=document.getElementById('lernen-titel').value.trim();const desc=document.getElementById('lernen-desc').value.trim();
+  const dauer=+document.getElementById('lernen-dauer').value;const datum=document.getElementById('lernen-datum').value;
   const eid=document.getElementById('lernen-edit-id').value;
   if(!fid||!titel||!dauer||!datum){toast('Fach, Titel, Dauer und Datum erforderlich','err');return;}
   let r;
-  if(eid){r=await api('PUT','/lerneintraege/'+eid,{fach_id:fid,methode_id:mid,thema_id,titel,beschreibung:desc,dauer_minuten:dauer,datum});if(r.id)SF.eintraege=SF.eintraege.map(e=>e.id===+eid?r:e);}
-  else{r=await api('POST','/lerneintraege',{fach_id:fid,methode_id:mid,thema_id,titel,beschreibung:desc,dauer_minuten:dauer,datum});if(r.id)SF.eintraege.push(r);}
+  if(eid){r=await api('PUT','/lerneintraege/'+eid,{fach_id:fid,methode_id:mid,titel,beschreibung:desc,dauer_minuten:dauer,datum});if(r.id)SF.eintraege=SF.eintraege.map(e=>e.id===+eid?r:e);}
+  else{r=await api('POST','/lerneintraege',{fach_id:fid,methode_id:mid,titel,beschreibung:desc,dauer_minuten:dauer,datum});if(r.id)SF.eintraege.push(r);}
   if(r.id){closeModal('lernen');toast(eid?'Eintrag aktualisiert':'Eintrag gespeichert','ok');renderLernen();}
 }
 async function delEintrag(eid){
-  if(!confirm('Eintrag löschen?')) return;
+  if(!confirm('Eintrag löschen?'))return;
   await api('DELETE','/lerneintraege/'+eid);
-  SF.eintraege=SF.eintraege.filter(e=>e.id!==eid);
-  toast('Eintrag gelöscht','ok'); renderLernen();
+  SF.eintraege=SF.eintraege.filter(e=>e.id!==eid);toast('Eintrag gelöscht','ok');renderLernen();
 }
-function loadThemenLernen(){
-  document.getElementById('lernen-thema-search').value='';
-  document.getElementById('lernen-thema-id').value='';
-}
+function loadThemenLernen(){const fid=+document.getElementById('lernen-fach')?.value;const sel=document.getElementById('lernen-thema-sel');if(!sel)return;const ts=SF.themen.filter(t=>t.fach_id===fid&&!t.abgeschlossen);sel.innerHTML='<option value="">— Thema auswählen —</option>'+ts.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');}
+function applyThemaLernen(){const v=document.getElementById('lernen-thema-sel')?.value;if(v)document.getElementById('lernen-titel').value=v;}
 
 /* ── THEMEN ───────────────────────────────────────────── */
 function openThemenModal(){
   const el=document.getElementById('thema-fach');
-  if(el&&SF.faecher.length) el.innerHTML=SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
-  document.getElementById('thema-search-input').value='';
-  renderThemenList(); openModal('themen');
+  if(el&&SF.faecher.length)el.innerHTML=SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  renderThemenList();openModal('themen');
 }
 function renderThemenList(){
   const fid=+document.getElementById('thema-fach')?.value;
-  const query=(document.getElementById('thema-search-input')?.value||'').toLowerCase();
-  const el=document.getElementById('themen-list'); if(!el) return;
-  let ts=SF.themen.filter(t=>t.fach_id===fid);
-  if(query) ts=ts.filter(t=>t.name.toLowerCase().includes(query));
+  const el=document.getElementById('themen-list');if(!el)return;
+  const ts=SF.themen.filter(t=>t.fach_id===fid);
   if(!ts.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem;padding:8px 0">Noch keine Themen für dieses Fach.</p>';return;}
-  el.innerHTML=ts.map(t=>`<div class="thema-row">
-    <span class="${t.abgeschlossen?'thema-done':''}" id="thema-label-${t.id}" style="flex:1">${t.name}</span>
-    <button class="btn-icon" onclick="startRenameThema(${t.id})" title="Umbenennen">✏️</button>
-    <button class="btn-icon" onclick="toggleThema(${t.id})" title="${t.abgeschlossen?'Wiederherstellen':'Abschliessen'}">${t.abgeschlossen?'↩️':'✅'}</button>
-    <button class="btn-icon" onclick="delThema(${t.id})" title="Löschen">🗑️</button>
-  </div>`).join('');
-}
-async function startRenameThema(tid) {
-  const t = SF.themen.find(x=>x.id===tid); if(!t) return;
-  const span = document.getElementById('thema-label-'+tid); if(!span) return;
-  const inp = document.createElement('input');
-  inp.className='rename-input'; inp.value=t.name; inp.style.width='100%';
-  span.replaceWith(inp); inp.focus(); inp.select();
-  async function commit() {
-    const newName=inp.value.trim();
-    if(newName && newName!==t.name) {
-      await api('PUT','/themen/'+tid,{name:newName});
-      SF.themen=SF.themen.map(x=>x.id===tid?{...x,name:newName}:x);
-      toast('Thema umbenannt','ok');
-    }
-    renderThemenList();
-  }
-  inp.addEventListener('blur',commit);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=t.name;inp.blur();}});
+  el.innerHTML=ts.map(t=>`<div class="thema-row"><span class="${t.abgeschlossen?'thema-done':''}" style="flex:1">${t.name}</span><button class="btn-icon" onclick="toggleThema(${t.id})">${t.abgeschlossen?'↩️':'✅'}</button><button class="btn-icon" onclick="delThema(${t.id})">🗑️</button></div>`).join('');
 }
 async function addThema(){
-  const name=document.getElementById('thema-name').value.trim();
-  const fid=+document.getElementById('thema-fach').value;
+  const name=document.getElementById('thema-name').value.trim();const fid=+document.getElementById('thema-fach').value;
   if(!name){toast('Thema-Name eingeben','err');return;}
-  if(!fid){toast('Bitte zuerst ein Fach auswählen','err');return;}
   const r=await api('POST','/themen',{fach_id:fid,name});
   if(r.id){SF.themen.push(r);document.getElementById('thema-name').value='';renderThemenList();toast('Thema hinzugefügt','ok');}
 }
@@ -1048,187 +1018,134 @@ async function toggleThema(tid){
   const t=SF.themen.find(x=>x.id===tid);if(!t)return;
   const newVal=t.abgeschlossen?0:1;
   await api('PUT','/themen/'+tid,{abgeschlossen:newVal});
-  SF.themen=SF.themen.map(x=>x.id===tid?{...x,abgeschlossen:newVal}:x);
-  renderThemenList();
+  SF.themen=SF.themen.map(x=>x.id===tid?{...x,abgeschlossen:newVal}:x);renderThemenList();
 }
 async function delThema(tid){await api('DELETE','/themen/'+tid);SF.themen=SF.themen.filter(t=>t.id!==tid);renderThemenList();}
 
 /* ── KALENDER ─────────────────────────────────────────── */
-const cal={date:new Date(),view:'monat',dragEv:null,selEvId:null,didDrop:false,dragging:false};
+const cal={date:new Date(),view:'monat',dragEv:null,selEvId:null,dragging:false};
 function renderKalender(){
   const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
   const el=document.getElementById('cal-title');
-  if(el) el.textContent=months[cal.date.getMonth()]+' '+cal.date.getFullYear();
-  if(cal.view==='monat') renderMonat(); else renderWoche();
+  if(el)el.textContent=months[cal.date.getMonth()]+' '+cal.date.getFullYear();
+  if(cal.view==='monat')renderMonat();else renderWoche();
   renderUpcoming();
 }
 function calPrev(){cal.view==='monat'?cal.date.setMonth(cal.date.getMonth()-1):cal.date.setDate(cal.date.getDate()-7);renderKalender();}
 function calNext(){cal.view==='monat'?cal.date.setMonth(cal.date.getMonth()+1):cal.date.setDate(cal.date.getDate()+7);renderKalender();}
 function calToday(){cal.date=new Date();renderKalender();}
-function setCalView(v){
-  cal.view=v;
-  document.getElementById('vbtn-monat').classList.toggle('active',v==='monat');
-  document.getElementById('vbtn-woche').classList.toggle('active',v==='woche');
-  renderKalender();
-}
+function setCalView(v){cal.view=v;document.getElementById('vbtn-monat').classList.toggle('active',v==='monat');document.getElementById('vbtn-woche').classList.toggle('active',v==='woche');renderKalender();}
 function renderMonat(){
-  const body=document.getElementById('cal-body'); if(!body) return;
+  const body=document.getElementById('cal-body');if(!body)return;
   const y=cal.date.getFullYear(),m=cal.date.getMonth();
   const startDay=(new Date(y,m,1).getDay()+6)%7;
   const daysInMonth=new Date(y,m+1,0).getDate();
   const today=new Date().toISOString().split('T')[0];
   let html='';
-  for(let i=0;i<startDay;i++){const d=new Date(y,m,-startDay+i+1);html+=`<div class="cal-cell other"><div class="cal-date">${d.getDate()}</div></div>`;}
+  for(let i=0;i<startDay;i++){const d=new Date(y,m,-(startDay-i-1));html+=`<div class="cal-cell other"><div class="cal-date">${d.getDate()}</div></div>`;}
   for(let d=1;d<=daysInMonth;d++){
     const date=new Date(y,m,d).toISOString().split('T')[0];
     const evs=SF.kalender.filter(e=>e.datum===date);
     const isToday=date===today;
-    const evHTML=evs.slice(0,3).map(e=>{
-      const fach=SF.faecher.find(f=>f.id===e.fach_id);
-      const bg=e.fach_farbe||(fach?fach.farbe:'#6366F1');
-      return`<div class="cal-ev" style="background:${bg}" draggable="true" ondragstart="calDragStart(event,${e.id})" ondragend="calDragEnd()" onclick="event.stopPropagation();showEventDetail(${e.id})" title="${e.titel}">${e.uhrzeit_start?e.uhrzeit_start.slice(0,5)+' ':''}${e.titel}</div>`;
-    }).join('');
+    const evHTML=evs.slice(0,3).map(e=>{const fach=SF.faecher.find(f=>f.id===e.fach_id);const bg=fach?fach.farbe:'#6366F1';return`<div class="cal-ev${e.is_learn_entry?' gelernt':''}" style="background:${bg}" draggable="${!e.is_learn_entry}" ondragstart="${!e.is_learn_entry?'calDragStart(event,'+e.id+')':''}" ondragend="calDragEnd()" onclick="event.stopPropagation();showEventDetail(${e.id})">${e.uhrzeit_start?e.uhrzeit_start.slice(0,5)+' ':''}${e.titel}</div>`;}).join('');
     const more=evs.length>3?`<div class="cal-more">+${evs.length-3} mehr</div>`:'';
     html+=`<div class="cal-cell${isToday?' today':''}" data-date="${date}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="calDrop(event,'${date}')" onclick="calCellClick(event,'${date}')"><div class="cal-date">${d}</div>${evHTML}${more}</div>`;
   }
   body.innerHTML=html;
 }
 function renderWoche(){
-  const body=document.getElementById('cal-body'); if(!body) return;
-  const d=new Date(cal.date);
-  d.setDate(d.getDate()-((d.getDay()+6)%7));
-  const today=new Date().toISOString().split('T')[0];
-  let html='';
+  const body=document.getElementById('cal-body');if(!body)return;
+  const d=new Date(cal.date);d.setDate(d.getDate()-((d.getDay()+6)%7));
+  const today=new Date().toISOString().split('T')[0];let html='';
   for(let i=0;i<7;i++){
-    const date=d.toISOString().split('T')[0];
-    const evs=SF.kalender.filter(e=>e.datum===date);
+    const date=d.toISOString().split('T')[0];const evs=SF.kalender.filter(e=>e.datum===date);
     const isToday=date===today;
-    const evHTML=evs.map(e=>{const fach=SF.faecher.find(f=>f.id===e.fach_id);const bg=e.fach_farbe||(fach?fach.farbe:'#6366F1');return`<div class="cal-ev" style="background:${bg}" draggable="true" ondragstart="calDragStart(event,${e.id})" ondragend="calDragEnd()" onclick="event.stopPropagation();showEventDetail(${e.id})">${e.uhrzeit_start?e.uhrzeit_start.slice(0,5)+' ':''}${e.titel}</div>`;}).join('');
+    const evHTML=evs.map(e=>{const fach=SF.faecher.find(f=>f.id===e.fach_id);const bg=fach?fach.farbe:'#6366F1';return`<div class="cal-ev" style="background:${bg}" onclick="event.stopPropagation();showEventDetail(${e.id})">${e.uhrzeit_start?e.uhrzeit_start.slice(0,5)+' ':''}${e.titel}</div>`;}).join('');
     html+=`<div class="cal-cell${isToday?' today':''}" style="min-height:120px" data-date="${date}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="calDrop(event,'${date}')" onclick="calCellClick(event,'${date}')"><div class="cal-date">${d.getDate()}</div>${evHTML}</div>`;
     d.setDate(d.getDate()+1);
   }
   body.innerHTML=html;
 }
 function renderUpcoming(){
-  const el=document.getElementById('upcoming-events'); if(!el) return;
+  const el=document.getElementById('upcoming-events');if(!el)return;
   const today=new Date().toISOString().split('T')[0];
-  const upcoming=SF.kalender.filter(e=>e.datum>=today).sort((a,b)=>a.datum.localeCompare(b.datum)).slice(0,5);
-  el.innerHTML=upcoming.length?upcoming.map(e=>{const fach=SF.faecher.find(f=>f.id===e.fach_id);const bg=e.fach_farbe||(fach?fach.farbe:'#6366F1');return`<div class="entry-item"><div class="entry-dot" style="background:${bg}"></div><div class="entry-info"><div class="entry-title">${e.titel}</div><div class="entry-meta">${fmtDate(e.datum)}${e.uhrzeit_start?' · '+e.uhrzeit_start.slice(0,5):''}${fach?' · '+fach.name:''}</div></div><button class="btn-icon" onclick="delEvent(${e.id})" title="Löschen">🗑️</button></div>`;}).join(''):emptyHTML('📅','Keine bevorstehenden Termine','Klick auf einen Kalendertag um einen Termin zu planen');
+  const upcoming=SF.kalender.filter(e=>e.datum>=today&&!e.is_learn_entry).sort((a,b)=>a.datum.localeCompare(b.datum)).slice(0,5);
+  el.innerHTML=upcoming.length?upcoming.map(e=>{const fach=SF.faecher.find(f=>f.id===e.fach_id);const bg=fach?fach.farbe:'#6366F1';return`<div class="entry-item"><div class="entry-dot" style="background:${bg}"></div><div class="entry-info"><div class="entry-title">${e.titel}</div><div class="entry-meta">${fmtDate(e.datum)}${e.uhrzeit_start?' · '+e.uhrzeit_start.slice(0,5):''}${fach?' · '+fach.name:''}</div></div><button class="btn-icon" onclick="delEvent(${e.id})">🗑️</button></div>`;}).join(''):emptyHTML('📅','Keine bevorstehenden Termine','Klick auf einen Kalendertag um einen Termin zu planen');
 }
 function showEventDetail(eid){
-  const e=SF.kalender.find(x=>x.id===eid); if(!e) return;
+  const e=SF.kalender.find(x=>x.id===eid);if(!e)return;
   cal.selEvId=eid;
   const fach=SF.faecher.find(f=>f.id===e.fach_id);
   document.getElementById('ev-detail-title').textContent=e.titel;
   document.getElementById('ev-detail-info').textContent=fmtDate(e.datum)+(e.uhrzeit_start?' · '+e.uhrzeit_start.slice(0,5):'')+(fach?' · '+fach.name:'');
   openModal('event-detail');
 }
-async function delEventFromDetail(){
-  if(!cal.selEvId) return;
-  await api('DELETE','/kalender/'+cal.selEvId);
-  SF.kalender=SF.kalender.filter(e=>e.id!==cal.selEvId);
-  closeModal('event-detail'); renderKalender(); toast('Termin gelöscht','ok');
-}
+async function delEventFromDetail(){if(!cal.selEvId)return;await api('DELETE','/kalender/'+cal.selEvId);SF.kalender=SF.kalender.filter(e=>e.id!==cal.selEvId);closeModal('event-detail');renderKalender();toast('Termin gelöscht','ok');}
 function openAddEvent(date){
-  if(cal.didDrop) return;
   const ef=document.getElementById('event-fach');
-  if(ef) ef.innerHTML='<option value="">Kein Fach</option>'+SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
-  document.getElementById('event-titel').value='';
-  document.getElementById('event-start').value='';
+  if(ef)ef.innerHTML='<option value="">Kein Fach</option>'+SF.faecher.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  document.getElementById('event-titel').value='';document.getElementById('event-start').value='';
   document.getElementById('event-datum').value=date||new Date().toISOString().split('T')[0];
   openModal('event');
 }
 async function saveEvent(){
-  const titel=document.getElementById('event-titel').value.trim();
-  const fid=+document.getElementById('event-fach').value||null;
-  const datum=document.getElementById('event-datum').value;
-  const start=document.getElementById('event-start').value;
+  const titel=document.getElementById('event-titel').value.trim();const fid=+document.getElementById('event-fach').value||null;
+  const datum=document.getElementById('event-datum').value;const start=document.getElementById('event-start').value;
   if(!titel||!datum){toast('Titel und Datum erforderlich','err');return;}
   const r=await api('POST','/kalender',{titel,fach_id:fid,datum,uhrzeit_start:start});
   if(r.id){SF.kalender.push(r);closeModal('event');toast('Termin gespeichert','ok');renderKalender();}
 }
-async function delEvent(eid){
-  if(!confirm('Termin löschen?')) return;
-  await api('DELETE','/kalender/'+eid);
-  SF.kalender=SF.kalender.filter(e=>e.id!==eid);
-  renderKalender(); toast('Termin gelöscht','ok');
-}
+async function delEvent(eid){if(!confirm('Termin löschen?'))return;await api('DELETE','/kalender/'+eid);SF.kalender=SF.kalender.filter(e=>e.id!==eid);renderKalender();toast('Termin gelöscht','ok');}
 function calCellClick(ev,date){if(cal.dragging)return;openAddEvent(date);}
 function calDragStart(ev,eid){cal.dragEv=eid;cal.dragging=true;ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',String(eid));}
 function calDragEnd(){setTimeout(()=>{cal.dragging=false;},200);}
 async function calDrop(ev,date){
   ev.preventDefault();ev.stopPropagation();
   document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
-  const eid=cal.dragEv||+ev.dataTransfer.getData('text/plain');
-  if(!eid){cal.dragging=false;return;}
+  const eid=cal.dragEv||+ev.dataTransfer.getData('text/plain');if(!eid){cal.dragging=false;return;}
   const ev_obj=SF.kalender.find(e=>e.id===eid);
-  if(ev_obj&&ev_obj.is_learn_entry){toast('Lerneinträge können nicht verschoben werden','err');cal.dragEv=null;return;}
+  if(ev_obj?.is_learn_entry){toast('Lerneinträge können nicht verschoben werden','err');cal.dragEv=null;return;}
   const r=await api('PUT','/kalender/'+eid,{datum:date});
-  if(r.id||r.titel){
-    SF.kalender=SF.kalender.map(e=>e.id===eid?{...e,...r}:e);
-    renderKalender();toast('Termin verschoben','ok');
-  }
+  if(r.id||r.titel){SF.kalender=SF.kalender.map(e=>e.id===eid?{...e,...r}:e);renderKalender();toast('Termin verschoben','ok');}
   cal.dragEv=null;
 }
 
 /* ── DASHBOARD ────────────────────────────────────────── */
 async function renderDashboard(){
   const d=await api('GET','/stats/dashboard');
-  const lernstd=Math.floor((d.lernzeit_woche||0)/60);
-  const lernmin=(d.lernzeit_woche||0)%60;
-  const avg=(d.avg_noten||[]).filter(f=>f.avg);
-  const gesAvg=avg.length?(avg.reduce((s,f)=>s+f.avg,0)/avg.length).toFixed(2):'–';
+  const lernstd=Math.floor((d.lernzeit_woche||0)/60);const lernmin=(d.lernzeit_woche||0)%60;
+  const avgArr=(d.avg_noten||[]).filter(f=>f.avg);
+  const gesAvg=avgArr.length?(avgArr.reduce((s,f)=>s+f.avg,0)/avgArr.length).toFixed(2):'–';
   const ln=d.letzte_note;
   const sc=document.getElementById('dash-stats');
-  if(sc) sc.innerHTML=`
-    <div class="stat-card fade-in"><div class="stat-icon">⏱️</div><div class="stat-label">Lernzeit diese Woche</div><div class="stat-val">${lernstd}h <span style="font-size:1.15rem">${lernmin}m</span></div><div class="stat-sub">${d.lernzeit_woche||0} Minuten total</div></div>
+  if(sc)sc.innerHTML=`
+    <div class="stat-card fade-in"><div class="stat-icon">⏱️</div><div class="stat-label">Lernzeit diese Woche</div><div class="stat-val">${lernstd}h <span style="font-size:1.1rem">${lernmin}m</span></div><div class="stat-sub">${d.lernzeit_woche||0} Minuten total</div></div>
     <div class="stat-card fade-in" style="animation-delay:.05s"><div class="stat-icon">🎓</div><div class="stat-label">Aktive Fächer</div><div class="stat-val">${SF.faecher.length}</div><div class="stat-sub">Schuljahr ${new Date().getFullYear()}</div></div>
     <div class="stat-card fade-in" style="animation-delay:.1s"><div class="stat-icon">📝</div><div class="stat-label">Letzte Note</div><div class="stat-val">${ln?ln.note:'–'}</div><div class="stat-sub">${ln?ln.fach+' · '+ln.titel:'Noch keine Noten'}</div></div>
-    <div class="stat-card fade-in" style="animation-delay:.15s"><div class="stat-icon">⭐</div><div class="stat-label">Gesamtdurchschnitt</div><div class="stat-val">${gesAvg}</div><div class="stat-sub">Gewichteter Durchschnitt</div></div>`;
+    <div class="stat-card fade-in" style="animation-delay:.15s"><div class="stat-icon">⭐</div><div class="stat-label">Gesamtdurchschnitt</div><div class="stat-val">${gesAvg}</div><div class="stat-sub">Gewichteter Schnitt</div></div>`;
   const lzf=d.lernzeit_pro_fach||[];
   destroyChart('ch-dash-fach');
-  if(document.getElementById('ch-dash-fach')) SF.charts['ch-dash-fach']=new Chart(document.getElementById('ch-dash-fach'),{type:'bar',data:{labels:lzf.length?lzf.map(f=>f.name):SF.faecher.map(f=>f.name),datasets:[{data:lzf.length?lzf.map(f=>+(f.total/60).toFixed(1)):SF.faecher.map(()=>0),backgroundColor:lzf.length?lzf.map(f=>f.farbe+'CC'):SF.faecher.map(f=>f.farbe+'CC'),borderRadius:8,borderSkipped:false}]},options:chOpts('Stunden')});
+  const chF=document.getElementById('ch-dash-fach');
+  if(chF)SF.charts['ch-dash-fach']=new Chart(chF,{type:'bar',data:{labels:lzf.length?lzf.map(f=>f.name):SF.faecher.map(f=>f.name),datasets:[{data:lzf.length?lzf.map(f=>+(f.total/60).toFixed(1)):SF.faecher.map(()=>0),backgroundColor:lzf.length?lzf.map(f=>f.farbe+'CC'):SF.faecher.map(f=>f.farbe+'CC'),borderRadius:8,borderSkipped:false}]},options:chOpts('Stunden')});
   const nd=(d.avg_noten||[]).filter(f=>f.avg);
   destroyChart('ch-dash-noten');
-  if(document.getElementById('ch-dash-noten')) SF.charts['ch-dash-noten']=new Chart(document.getElementById('ch-dash-noten'),{type:'bar',data:{labels:nd.length?nd.map(f=>f.name):SF.faecher.map(f=>f.name),datasets:[{data:nd.length?nd.map(f=>f.avg):SF.faecher.map(()=>0),backgroundColor:nd.length?nd.map(f=>f.farbe+'CC'):SF.faecher.map(f=>f.farbe+'CC'),borderRadius:8,borderSkipped:false}]},options:{...chOpts('Note'),scales:{x:chScale(),y:{...chScale(),min:1,max:6}}}});
+  const chN=document.getElementById('ch-dash-noten');
+  if(chN)SF.charts['ch-dash-noten']=new Chart(chN,{type:'bar',data:{labels:nd.length?nd.map(f=>f.name):SF.faecher.map(f=>f.name),datasets:[{data:nd.length?nd.map(f=>f.avg):SF.faecher.map(()=>0),backgroundColor:nd.length?nd.map(f=>f.farbe+'CC'):SF.faecher.map(f=>f.farbe+'CC'),borderRadius:8,borderSkipped:false}]},options:{...chOpts('Note'),scales:{x:chScale(),y:{...chScale(),min:1,max:6}}}});
   const ee=d.letzte_eintraege||[];
   const dei=document.getElementById('dash-eintraege');
-  if(dei) dei.innerHTML=ee.length?ee.map(e=>entryHTML(e,false)).join(''):emptyHTML('📚','Noch keine Lerneinträge','Starte deine erste Lerneinheit unter "Lernen"');
+  if(dei)dei.innerHTML=ee.length?ee.map(e=>entryHTML(e,false)).join(''):emptyHTML('📚','Noch keine Lerneinträge','Starte deine erste Lerneinheit unter "Lernen"');
 }
 
 /* ── STATISTIKEN ──────────────────────────────────────── */
 function emptyChart(id,type,label){
   destroyChart(id);const el=document.getElementById(id);if(!el)return;
-  const borderColor=getCS('--border2');
-  if(type==='doughnut'){SF.charts[id]=new Chart(el,{type:'doughnut',data:{labels:['Noch keine Daten'],datasets:[{data:[1],backgroundColor:[borderColor],borderWidth:0}]},options:{responsive:true,cutout:'65%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});}
-  else if(type==='radar'){SF.charts[id]=new Chart(el,{type:'radar',data:{labels:SF.faecher.length?SF.faecher.map(f=>f.name):['Fach 1','Fach 2','Fach 3'],datasets:[{data:SF.faecher.length?SF.faecher.map(()=>0):[0,0,0],borderColor:borderColor,backgroundColor:'transparent',borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{grid:{color:getCS('--border')},angleLines:{color:getCS('--border')},ticks:{display:false},pointLabels:{color:getCS('--text3'),font:{family:'Outfit',size:11}},min:0,max:6}}}});}
-  else{SF.charts[id]=new Chart(el,{type:'bar',data:{labels:['Noch keine Daten'],datasets:[{data:[0],backgroundColor:borderColor,borderRadius:8}]},options:{...chOpts(label),plugins:{legend:{display:false},tooltip:{enabled:false}}}});}
+  if(type==='doughnut'){SF.charts[id]=new Chart(el,{type:'doughnut',data:{labels:['Keine Daten'],datasets:[{data:[1],backgroundColor:[getCS('--border2')],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});}
+  else if(type==='radar'){SF.charts[id]=new Chart(el,{type:'radar',data:{labels:SF.faecher.length?SF.faecher.map(f=>f.name):['Fach 1','Fach 2','Fach 3'],datasets:[{data:SF.faecher.length?SF.faecher.map(()=>0):[0,0,0],borderColor:getCS('--border2'),backgroundColor:'transparent',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{grid:{color:getCS('--border')},angleLines:{color:getCS('--border')},ticks:{display:false},pointLabels:{color:getCS('--text3'),font:{family:'Outfit',size:11}},min:0,max:6}}}});}
+  else{SF.charts[id]=new Chart(el,{type:'bar',data:{labels:['Keine Daten'],datasets:[{data:[0],backgroundColor:getCS('--border2'),borderRadius:8}]},options:{...chOpts(label),plugins:{legend:{display:false},tooltip:{enabled:false}}}});}
 }
 async function renderStatistiken(){
   const d=await api('GET','/stats/auswertung');
-  const lzf=d.lernzeit_pro_fach||[];
-  destroyChart('ch-stat-fach');
-  const elF=document.getElementById('ch-stat-fach');
-  if(elF){if(lzf.length)SF.charts['ch-stat-fach']=new Chart(elF,{type:'doughnut',data:{labels:lzf.map(f=>f.name),datasets:[{data:lzf.map(f=>+(f.total/60).toFixed(1)),backgroundColor:lzf.map(f=>f.farbe+'CC'),borderWidth:0}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'right',labels:{color:getCS('--text'),font:{family:'Outfit',weight:'600',size:11},boxWidth:12,borderRadius:4,padding:12}},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'}}}}});else emptyChart('ch-stat-fach','doughnut','');}
-  const mzm=d.lernzeit_pro_methode||[];
-  destroyChart('ch-stat-meth');
-  const elM=document.getElementById('ch-stat-meth');
-  if(elM){if(mzm.length)SF.charts['ch-stat-meth']=new Chart(elM,{type:'bar',data:{labels:mzm.map(m=>m.name),datasets:[{data:mzm.map(m=>+(m.total/60).toFixed(1)),backgroundColor:mzm.map(m=>(m.farbe||getCS('--accent'))+'CC'),borderRadius:8,borderSkipped:false}]},options:chOpts('Stunden')});else emptyChart('ch-stat-meth','bar','Stunden');}
-  const nm=d.noten_pro_methode||[];
-  destroyChart('ch-note-meth');
-  const elNM=document.getElementById('ch-note-meth');
-  if(elNM){if(nm.length)SF.charts['ch-note-meth']=new Chart(elNM,{type:'bar',data:{labels:nm.map(m=>m.name),datasets:[{data:nm.map(m=>+m.avg),backgroundColor:nm.map(m=>(m.farbe||getCS('--accent'))+'CC'),borderRadius:8,borderSkipped:false}]},options:{...chOpts('Note'),scales:{x:chScale(),y:{...chScale(),min:1,max:6}}}});else emptyChart('ch-note-meth','bar','Note');}
-  // Verlauf 30 Tage
-  const vl=d.verlauf_30||[];
-  destroyChart('ch-verlauf');
-  const elV=document.getElementById('ch-verlauf');
-  if(elV){
-    const today=new Date();
-    const labels=Array.from({length:30},(_,i)=>{const dd=new Date(today);dd.setDate(dd.getDate()-29+i);return dd.toISOString().split('T')[0].slice(5);});
-    const dataMap=Object.fromEntries(vl.map(v=>[v.datum.slice(5),v.minuten]));
-    SF.charts['ch-verlauf']=new Chart(elV,{type:'line',data:{labels,datasets:[{data:labels.map(l=>dataMap[l]||0),borderColor:getCS('--accent'),backgroundColor:getCS('--acc-soft'),fill:true,tension:0.4,pointRadius:3,borderWidth:2}]},options:{...chOpts('Minuten'),plugins:{legend:{display:false},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'},callbacks:{label:ctx=>{const v=ctx.raw;return fmtMin(v);}}}}}});
-  }
-  // Radar — bigger, semi-transparent so both lines visible
+  // 1. Radar (now first and biggest)
   destroyChart('ch-radar');
   const elR=document.getElementById('ch-radar');
   if(elR){
@@ -1236,137 +1153,153 @@ async function renderStatistiken(){
     if(rdata.length>=3){
       const maxLz=Math.max(1,...rdata.map(f=>SF.eintraege.filter(e=>e.fach_id===f.id).reduce((s,e)=>s+e.dauer_minuten,0)));
       SF.charts['ch-radar']=new Chart(elR,{type:'radar',data:{labels:rdata.map(f=>f.name),datasets:[
-        {label:'Lernzeit',data:rdata.map(f=>{const lz=SF.eintraege.filter(e=>e.fach_id===f.id).reduce((s,e)=>s+e.dauer_minuten,0);return+(lz/maxLz*6).toFixed(1);}),borderColor:getCS('--accent'),backgroundColor:'rgba(203,166,247,.25)',borderWidth:2.5,pointBackgroundColor:getCS('--accent')},
-        {label:'Noten',data:rdata.map(f=>{const ns=SF.noten.filter(n=>n.fach_id===f.id);return ns.length?+(ns.reduce((s,n)=>s+n.note*(n.gewichtung||1),0)/ns.reduce((s,n)=>s+(n.gewichtung||1),0)).toFixed(2):0;}),borderColor:getCS('--green'),backgroundColor:'rgba(166,227,161,.2)',borderWidth:2.5,pointBackgroundColor:getCS('--green')}
-      ]},options:{responsive:true,plugins:{legend:{labels:{color:getCS('--text'),font:{family:'Outfit',weight:'600',size:12}}},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'},callbacks:{label:ctx=>{const ds=ctx.dataset.label;const v=ctx.raw;return ds==='Lernzeit'?`Lernzeit: ${(v/6*maxLz/60).toFixed(1)}h`:ds+': '+v;}}}},scales:{r:{grid:{color:getCS('--border')},angleLines:{color:getCS('--border')},ticks:{display:false},pointLabels:{color:getCS('--text2'),font:{family:'Outfit',weight:'600',size:13}},min:0,max:6}}}});
+        {label:'Lernzeit',data:rdata.map(f=>{const lz=SF.eintraege.filter(e=>e.fach_id===f.id).reduce((s,e)=>s+e.dauer_minuten,0);return+(lz/maxLz*6).toFixed(1);}),borderColor:getCS('--accent'),backgroundColor:getCS('--acc-soft'),borderWidth:2.5},
+        {label:'Noten',data:rdata.map(f=>{const ns=SF.noten.filter(n=>n.fach_id===f.id);return ns.length?+(ns.reduce((s,n)=>s+n.note,0)/ns.length).toFixed(2):0;}),borderColor:getCS('--green'),backgroundColor:'rgba(166,227,161,.15)',borderWidth:2.5}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:getCS('--text'),font:{family:'Outfit',weight:'600',size:11}}},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'},callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.r.toFixed(2);}}}},scales:{r:{grid:{color:getCS('--border')},angleLines:{color:getCS('--border')},ticks:{display:false},pointLabels:{color:getCS('--text2'),font:{family:'Outfit',weight:'600',size:11}},min:0,max:6}}}});
     }else emptyChart('ch-radar','radar','');
+  }
+  // 2. Lernzeit Fach
+  const lzf=d.lernzeit_pro_fach||[];destroyChart('ch-stat-fach');const elF=document.getElementById('ch-stat-fach');
+  if(elF){if(lzf.length)SF.charts['ch-stat-fach']=new Chart(elF,{type:'doughnut',data:{labels:lzf.map(f=>f.name),datasets:[{data:lzf.map(f=>+(f.total/60).toFixed(1)),backgroundColor:lzf.map(f=>f.farbe+'CC'),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:getCS('--text'),font:{family:'Outfit',weight:'600',size:11},boxWidth:12,borderRadius:4,padding:10}},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'}}}}});else emptyChart('ch-stat-fach','doughnut','');}
+  // 3. Lernzeit Methode
+  const mzm=d.lernzeit_pro_methode||[];destroyChart('ch-stat-meth');const elM=document.getElementById('ch-stat-meth');
+  if(elM){if(mzm.length)SF.charts['ch-stat-meth']=new Chart(elM,{type:'bar',data:{labels:mzm.map(m=>m.name),datasets:[{data:mzm.map(m=>+(m.total/60).toFixed(1)),backgroundColor:mzm.map(m=>m.farbe+'CC'||'#cba6f7CC'),borderRadius:8,borderSkipped:false}]},options:chOpts('Stunden')});else emptyChart('ch-stat-meth','bar','Stunden');}
+  // 4. Note vs Methode
+  const nm=d.noten_pro_methode||[];destroyChart('ch-note-meth');const elNM=document.getElementById('ch-note-meth');
+  if(elNM){if(nm.length)SF.charts['ch-note-meth']=new Chart(elNM,{type:'bar',data:{labels:nm.map(m=>m.name),datasets:[{data:nm.map(m=>+m.avg),backgroundColor:nm.map(m=>(m.farbe||'#cba6f7')+'CC'),borderRadius:8,borderSkipped:false}]},options:{...chOpts('Note'),scales:{x:chScale(),y:{...chScale(),min:1,max:6}}}});else emptyChart('ch-note-meth','bar','Note');}
+  // 5. Thema Scatter
+  const ts=d.thema_stats||[];destroyChart('ch-thema');const elT=document.getElementById('ch-thema');
+  if(elT){
+    if(ts.length>=2){
+      SF.charts['ch-thema']=new Chart(elT,{type:'scatter',
+        data:{datasets:[{label:'Themen',data:ts.map(t=>({x:+(t.lernzeit/60).toFixed(1),y:t.avg_note||0,label:t.name})),backgroundColor:ts.map(t=>{const f=SF.faecher.find(f=>f.id===t.fach_id);return (f?f.farbe:'#cba6f7')+'CC';}),pointRadius:7,pointHoverRadius:10}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'},callbacks:{label:function(ctx){const p=ctx.raw;return p.label+': '+p.x+'h Lernzeit, Note '+p.y;}}}},scales:{x:{...chScale(),title:{display:true,text:'Lernzeit (Std.)',color:getCS('--text2'),font:{family:'Outfit'}}},y:{...chScale(),min:1,max:6,title:{display:true,text:'Notenschnitt',color:getCS('--text2'),font:{family:'Outfit'}}}}}});
+    }else{
+      SF.charts['ch-thema']=new Chart(elT,{type:'bar',data:{labels:['Noch keine Thema-Daten'],datasets:[{data:[0],backgroundColor:getCS('--border2'),borderRadius:8}]},options:{...chOpts(''),plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+    }
+  }
+  // 6. Verlauf 30 Tage
+  const vl=d.verlauf_30||[];destroyChart('ch-verlauf');const elV=document.getElementById('ch-verlauf');
+  if(elV){
+    const today=new Date();
+    const labels=Array.from({length:30},(_,i)=>{const dd=new Date(today);dd.setDate(dd.getDate()-29+i);return dd.toISOString().split('T')[0].slice(5);});
+    const dataMap=Object.fromEntries(vl.map(v=>[v.datum.slice(5),v.minuten]));
+    SF.charts['ch-verlauf']=new Chart(elV,{type:'line',data:{labels,datasets:[{data:labels.map(l=>dataMap[l]||0),borderColor:getCS('--accent'),backgroundColor:getCS('--acc-soft'),fill:true,tension:0.4,pointRadius:2,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{bodyFont:{family:'Outfit'},titleFont:{family:'Outfit',weight:'700'},callbacks:{label:function(ctx){return fmtMin(ctx.parsed.y);}}}},scales:{x:{...chScale(),ticks:{maxTicksLimit:10}},y:chScale()}}});
   }
 }
 
 /* ── METHODEN ─────────────────────────────────────────── */
-const METHODEN_INFO={'Karteikarten':{icon:'🃏',desc:'Lernkarten erstellen und durch aktives Abrufen wiederholen. Ideal für Definitionen, Vokabeln und Formeln.'},'Videos':{icon:'🎥',desc:'Erklärvideos ansehen, pausieren und nachvollziehen. Gut für visuelle Lerner bei komplexen Themen.'},'Aufgaben lösen':{icon:'✏️',desc:'Übungsaufgaben selbstständig lösen und Fehler analysieren. Effektiv für Mathematik und Naturwissenschaften.'},'Active Recall':{icon:'🧠',desc:'Stoff ohne Hilfsmittel aus dem Gedächtnis wiedergeben. Eine der wissenschaftlich wirksamsten Methoden.'},'Zusammenfassung':{icon:'📄',desc:'Eigene strukturierte Zusammenfassungen schreiben. Hilft beim Verstehen und Behalten von Texten.'},'Lesen':{icon:'📖',desc:'Lehrbücher und Texte aktiv lesen, wichtiges markieren und Notizen machen.'},'Spaced Repetition':{icon:'🔄',desc:'Wiederholung in steigenden Zeitintervallen. Maximiert Langzeitgedächtnis mit minimalem Aufwand.'},'Pomodoro':{icon:'🍅',desc:'25 Minuten konzentriert lernen, 5 Minuten Pause. Steigert Fokus und verhindert Ermüdung.'},'Mind Map':{icon:'🗺️',desc:'Themen visuell als Gedankenkarte strukturieren. Fördert vernetztes Denken und Überblick.'}};
+const METHODEN_ICON_MAP={
+  'Karteikarten':'🃏','Videos':'🎥','Aufgaben lösen':'✏️','Active Recall':'🧠',
+  'Zusammenfassung':'📄','Lesen':'📖','Spaced Repetition':'🔄','Pomodoro':'⏰','Mind Map':'🗺️',
+  'BookOpen':'📖','CreditCard':'🃏','Play':'▶️','PenLine':'✏️','Brain':'🧠',
+  'FileText':'📄','RefreshCw':'🔄','Timer':'⏰','Network':'🗺️',
+};
+function getMethodeIcon(m){return METHODEN_ICON_MAP[m.name]||METHODEN_ICON_MAP[m.icon]||'⚡';}
 function renderMethoden(){
   const el=document.getElementById('methoden-grid');if(!el)return;
-  if(!SF.methoden.length){el.innerHTML=emptyHTML('⚡','Keine Methoden','Keine Lernmethoden gefunden.');return;}
+  if(!SF.methoden.length){el.innerHTML=emptyHTML('⚡','Keine Methoden','');return;}
   el.innerHTML=SF.methoden.map(m=>{
-    let customDesc=m.beschreibung||'';let customIcon='⚡';
-    if(!m.ist_vordefiniert&&customDesc.includes('|')){const parts=customDesc.split('|');customIcon=parts[0];customDesc=parts.slice(1).join('|');}
-    const info=METHODEN_INFO[m.name]||{icon:customIcon,desc:customDesc||'–'};
+    const icon=getMethodeIcon(m);
     const isOwn=!m.ist_vordefiniert;
-    return`<div class="meth-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px"><div style="display:flex;align-items:center;gap:10px"><div style="width:44px;height:44px;border-radius:12px;background:${m.farbe||'#CBA6F7'}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem">${info.icon}</div><div><div class="meth-name">${m.name}</div><div style="font-size:.72rem;font-weight:700;color:${isOwn?'var(--accent)':'var(--text3)'};text-transform:uppercase;letter-spacing:.05em">${isOwn?'Eigene':'Standard'}</div></div></div>${isOwn?`<button class="btn-icon" onclick="delMethode(${m.id})" title="Löschen">🗑️</button>`:''}</div><p style="font-size:.84rem;color:var(--text2);line-height:1.65;margin-bottom:12px">${info.desc}</p>${m.empfehlung?`<div class="meth-for">📚 ${m.empfehlung}</div>`:''}</div>`;
+    return`<div class="meth-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:44px;height:44px;border-radius:12px;background:${m.farbe||'#cba6f7'}22;display:flex;align-items:center;justify-content:center;font-size:1.35rem">${icon}</div>
+          <div><div class="meth-name">${m.name}</div><div style="font-size:.72rem;font-weight:700;color:${isOwn?'var(--accent)':'var(--muted)'};text-transform:uppercase;letter-spacing:.05em">${isOwn?'Eigene':'Standard'}</div></div>
+        </div>
+        ${isOwn?`<button class="btn-icon" onclick="delMethode(${m.id})">🗑️</button>`:''}
+      </div>
+      <p style="font-size:.83rem;color:var(--text2);line-height:1.65;margin-bottom:10px">${m.beschreibung||'–'}</p>
+      ${m.empfehlung?`<div class="meth-for">📚 ${m.empfehlung}</div>`:''}
+    </div>`;
   }).join('');
 }
 function openMethodeModal(){
   ['m-name','m-desc','m-empf'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('m-icon').value='💡';
-  openModal('methode');
+  document.getElementById('m-icon').value='BookOpen';
+  SF.selMethColor='#cba6f7';
+  buildColorDots('methode-cdots','selMethColor');
   setTimeout(buildIconGrid,50);
+  openModal('methode');
 }
-const METHODEN_ICONS=['💡','🔬','🎨','✍️','🎵','🏃','💻','📐','🗂️','🧩','🔭','📷','🎯','💬','🤝','📱','🌍','⚽','🎮','🏆','🔑','💎','🌱','🧪','📡','🎤','🎸','🔮'];
+const METHODEN_ICONS_EMOJI=['📚','🔬','🎨','✍️','🎵','💻','📐','🗂️','🧩','🔭','🎯','💬','🌍','🔑','💎','🌱','🧪','📡','🎤','🔮','⚡','🃏','🎥','✏️','🧠','📄','📖','🔄','⏰','🗺️'];
 function buildIconGrid(){
   const grid=document.getElementById('m-icon-grid');if(!grid)return;
-  const cur=document.getElementById('m-icon')?.value||'💡';
-  grid.innerHTML=METHODEN_ICONS.map(ico=>`<button type="button" onclick="selMethodeIcon('${ico}')" style="width:100%;aspect-ratio:1;border-radius:8px;font-size:1.3rem;display:flex;align-items:center;justify-content:center;border:2px solid ${ico===cur?'var(--accent)':'var(--border)'};background:${ico===cur?'var(--acc-soft)':'var(--bg2)'};transition:all .15s;cursor:pointer">${ico}</button>`).join('');
+  const cur=document.getElementById('m-icon')?.value||'BookOpen';
+  grid.innerHTML=METHODEN_ICONS_EMOJI.map(ico=>`<button type="button" onclick="selMethodeIcon('${ico}')" style="width:100%;aspect-ratio:1;border-radius:8px;font-size:1.25rem;display:flex;align-items:center;justify-content:center;border:2px solid ${ico===cur?'var(--accent)':'var(--border)'};background:${ico===cur?'var(--acc-soft)':'var(--bg2)'};transition:all .15s;cursor:pointer">${ico}</button>`).join('');
 }
 function selMethodeIcon(ico){document.getElementById('m-icon').value=ico;buildIconGrid();}
 async function saveMethode(){
   const name=document.getElementById('m-name').value.trim();
   const desc=document.getElementById('m-desc').value.trim();
   const empf=document.getElementById('m-empf').value.trim();
-  const icon=document.getElementById('m-icon')?.value||'💡';
+  const icon=document.getElementById('m-icon')?.value||'⚡';
   if(!name){toast('Name erforderlich','err');return;}
-  const fullDesc=icon+'|'+desc;
-  const r=await api('POST','/lernmethoden',{name,beschreibung:fullDesc,empfehlung:empf,farbe:SF.selColor});
+  const r=await api('POST','/lernmethoden',{name,beschreibung:desc,empfehlung:empf,farbe:SF.selMethColor,icon});
   if(r.id){SF.methoden.push(r);fillMethodeDrops();closeModal('methode');toast('Methode gespeichert','ok');renderMethoden();}
 }
-async function delMethode(mid){
-  if(!confirm('Methode löschen?')) return;
-  await api('DELETE','/lernmethoden/'+mid);
-  SF.methoden=SF.methoden.filter(m=>m.id!==mid);
-  renderMethoden(); toast('Methode gelöscht','ok');
-}
+async function delMethode(mid){if(!confirm('Methode löschen?'))return;await api('DELETE','/lernmethoden/'+mid);SF.methoden=SF.methoden.filter(m=>m.id!==mid);renderMethoden();toast('Methode gelöscht','ok');}
 
 /* ── EINSTELLUNGEN ────────────────────────────────────── */
-function renderSettingsPage(){
-  setUserUI();
-  renderSettingsFaecher();
-  fillSettingsThemaFach();
-  renderSettingsSemester();
-}
+function renderSettingsPage(){setUserUI();renderSettingsFaecher();renderSettingsSemester();fillSettingsThemaFach();}
 function renderSettingsFaecher(){
   const el=document.getElementById('settings-faecher');if(!el)return;
-  if(!SF.faecher.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem;padding:8px 0">Noch keine Fächer vorhanden.</p>';return;}
-  el.innerHTML=SF.faecher.map(f=>`<div class="settings-row"><div style="display:flex;align-items:center;gap:10px"><div style="width:14px;height:14px;border-radius:4px;background:${f.farbe};flex-shrink:0"></div><div><div class="settings-lbl">${f.name}</div><div class="settings-sub">${SF.noten.filter(n=>n.fach_id===f.id).length} Noten · ${SF.eintraege.filter(e=>e.fach_id===f.id).length} Einträge</div></div></div><div style="display:flex;gap:6px"><button class="btn btn-s btn-xs" onclick="renameFach(${f.id})">Umbenennen</button><button class="btn btn-danger btn-xs" onclick="delFach(${f.id})">Löschen</button></div></div>`).join('');
+  if(!SF.faecher.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem;padding:8px 0">Noch keine Fächer.</p>';return;}
+  el.innerHTML=SF.faecher.map(f=>`<div class="settings-row">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:14px;height:14px;border-radius:4px;background:${f.farbe};flex-shrink:0"></div>
+      <div><div class="settings-lbl">${f.name}</div><div class="settings-sub">${SF.noten.filter(n=>n.fach_id===f.id).length} Noten · ${SF.eintraege.filter(e=>e.fach_id===f.id).length} Einträge</div></div>
+    </div>
+    <button class="btn btn-danger btn-xs" onclick="delFach(${f.id})">Löschen</button>
+  </div>`).join('');
+}
+function renderSettingsSemester(){
+  const el=document.getElementById('settings-semester');if(!el)return;
+  if(!SF.semester.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem;padding:8px 0">Noch keine Semester.</p>';return;}
+  el.innerHTML=SF.semester.map(s=>`<div class="sem-row">
+    <span style="flex:1;font-size:.88rem">${s.name}</span>
+    <button class="btn-icon" onclick="settingsDelSemester(${s.id})">🗑️</button>
+  </div>`).join('');
+}
+async function settingsAddSemester(){
+  const name=document.getElementById('settings-sem-new').value.trim();
+  if(!name){toast('Name erforderlich','err');return;}
+  const r=await api('POST','/semester',{name});
+  if(r.id){SF.semester.push(r);document.getElementById('settings-sem-new').value='';renderSettingsSemester();fillSemesterDrops();toast('Semester hinzugefügt','ok');}
+}
+async function settingsDelSemester(sid){
+  await api('DELETE','/semester/'+sid);
+  SF.semester=SF.semester.filter(s=>s.id!==sid);renderSettingsSemester();fillSemesterDrops();toast('Semester gelöscht','ok');
 }
 function renderSettingsThemen(){
   const el=document.getElementById('settings-themen');if(!el)return;
   const fid=+document.getElementById('settings-thema-fach')?.value;
-  const query=(document.getElementById('settings-thema-search')?.value||'').toLowerCase();
   if(!fid){el.innerHTML='<p style="color:var(--text3);font-size:.82rem">Fach oben auswählen</p>';return;}
-  let ts=SF.themen.filter(t=>t.fach_id===fid);
-  if(query) ts=ts.filter(t=>t.name.toLowerCase().includes(query));
+  const ts=SF.themen.filter(t=>t.fach_id===fid);
   if(!ts.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem">Noch keine Themen für dieses Fach.</p>';return;}
   el.innerHTML=ts.map(t=>`<div class="thema-row">
-    <span class="${t.abgeschlossen?'thema-done':''}" id="st-label-${t.id}" style="flex:1;font-size:.88rem">${t.name}</span>
-    <button class="btn-icon" onclick="startRenameSettingsThema(${t.id})" title="Umbenennen">✏️</button>
-    <button class="btn-icon" onclick="settingsToggleThema(${t.id})" title="${t.abgeschlossen?'Wiederherstellen':'Abschliessen'}">${t.abgeschlossen?'↩️':'✅'}</button>
-    <button class="btn-icon" onclick="settingsDelThema(${t.id})" title="Löschen">🗑️</button>
+    <input class="thema-rename-input" value="${t.name}" id="thema-inp-${t.id}"
+      onblur="renameThema(${t.id})" onkeydown="if(event.key==='Enter')renameThema(${t.id})">
+    <button class="btn-icon" onclick="settingsToggleThema(${t.id})">${t.abgeschlossen?'↩️':'✅'}</button>
+    <button class="btn-icon" onclick="settingsDelThema(${t.id})">🗑️</button>
   </div>`).join('');
 }
-async function startRenameSettingsThema(tid) {
-  const t = SF.themen.find(x=>x.id===tid); if(!t) return;
-  const span = document.getElementById('st-label-'+tid); if(!span) return;
-  const inp = document.createElement('input');
-  inp.className='rename-input'; inp.value=t.name; inp.style.width='100%';
-  span.replaceWith(inp); inp.focus(); inp.select();
-  async function commit() {
-    const newName=inp.value.trim();
-    if(newName && newName!==t.name) {
-      await api('PUT','/themen/'+tid,{name:newName});
-      SF.themen=SF.themen.map(x=>x.id===tid?{...x,name:newName}:x);
-      toast('Thema umbenannt','ok');
-    }
-    renderSettingsThemen();
-  }
-  inp.addEventListener('blur',commit);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=t.name;inp.blur();}});
+async function renameThema(tid){
+  const inp=document.getElementById('thema-inp-'+tid);if(!inp)return;
+  const name=inp.value.trim();if(!name)return;
+  const old=SF.themen.find(t=>t.id===tid);if(!old||old.name===name)return;
+  const r=await api('PUT','/themen/'+tid,{name,abgeschlossen:old.abgeschlossen});
+  if(r.id){SF.themen=SF.themen.map(t=>t.id===tid?{...t,name}:t);toast('Thema umbenannt','ok');}
 }
-async function settingsToggleThema(tid){
-  const t=SF.themen.find(x=>x.id===tid);if(!t)return;
-  const newVal=t.abgeschlossen?0:1;
-  await api('PUT','/themen/'+tid,{abgeschlossen:newVal});
-  SF.themen=SF.themen.map(x=>x.id===tid?{...x,abgeschlossen:newVal}:x);
-  renderSettingsThemen();
-}
+async function settingsToggleThema(tid){const t=SF.themen.find(x=>x.id===tid);if(!t)return;const newVal=t.abgeschlossen?0:1;await api('PUT','/themen/'+tid,{abgeschlossen:newVal});SF.themen=SF.themen.map(x=>x.id===tid?{...x,abgeschlossen:newVal}:x);renderSettingsThemen();}
 async function settingsDelThema(tid){await api('DELETE','/themen/'+tid);SF.themen=SF.themen.filter(t=>t.id!==tid);renderSettingsThemen();toast('Thema gelöscht','ok');}
 async function settingsAddThema(){
-  const name=document.getElementById('settings-thema-new').value.trim();
-  const fid=+document.getElementById('settings-thema-fach')?.value;
+  const name=document.getElementById('settings-thema-new').value.trim();const fid=+document.getElementById('settings-thema-fach')?.value;
   if(!name||!fid){toast('Thema und Fach erforderlich','err');return;}
   const r=await api('POST','/themen',{fach_id:fid,name});
   if(r.id){SF.themen.push(r);document.getElementById('settings-thema-new').value='';renderSettingsThemen();toast('Thema hinzugefügt','ok');}
 }
-
-/* ── SEMESTER SETTINGS ────────────────────────────────── */
-function renderSettingsSemester(){
-  const el=document.getElementById('settings-semester');if(!el)return;
-  if(!SF.semester.length){el.innerHTML='<p style="color:var(--text3);font-size:.82rem;padding:8px 0">Noch keine Semester vorhanden.</p>';return;}
-  el.innerHTML=SF.semester.map(s=>`<div class="settings-row"><div><div class="settings-lbl">${s.name}</div><div class="settings-sub">Label für Noten</div></div><button class="btn btn-danger btn-xs" onclick="delSemester(${s.id})">Löschen</button></div>`).join('');
-}
-async function settingsAddSemester(){
-  const name=document.getElementById('settings-semester-new').value.trim();
-  if(!name){toast('Semester-Name eingeben','err');return;}
-  const r=await api('POST','/semester',{name});
-  if(r.id){SF.semester.push(r);document.getElementById('settings-semester-new').value='';renderSettingsSemester();fillSemesterDrops();toast('Semester hinzugefügt','ok');}
-}
-async function delSemester(sid){
-  if(!confirm('Semester löschen? Zugeordnete Noten verlieren das Label.')) return;
-  await api('DELETE','/semester/'+sid);
-  SF.semester=SF.semester.filter(s=>s.id!==sid);
-  renderSettingsSemester();fillSemesterDrops();toast('Semester gelöscht','ok');
-}
-
-/* ── PROFILE PIC ──────────────────────────────────────── */
 function uploadProfilePic(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
