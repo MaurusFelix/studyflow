@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>StudyFlow{% if active_page %} – {{ active_page|capitalize }}{% endif %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="{% if active_page %}app-page{% else %}land-page{% endif %}">
+
+<!-- ══ MODALS ══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="modal-login" onclick="closeModalOutside(event,'modal-login')">
+  <div class="modal modal-sm">
+    <h2>👋 Willkommen zurück</h2><p class="modal-sub">Melde dich an um weiterzumachen</p>
+    <div class="fg"><label class="flbl">Benutzername</label><input class="fi" id="login-user" type="text" placeholder="admin" autocomplete="username"></div>
+    <div class="fg"><label class="flbl">Passwort</label><input class="fi" id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div id="login-err" class="ferr" style="display:none"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="doLogin()">Anmelden</button>
+      <button class="btn btn-s" onclick="closeModal('login');openModal('register')">Registrieren</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-register" onclick="closeModalOutside(event,'modal-register')">
+  <div class="modal modal-sm">
+    <h2>🎉 Konto erstellen</h2><p class="modal-sub">Kostenlos registrieren und loslegen</p>
+    <div class="fg"><label class="flbl">Benutzername *</label><input class="fi" id="reg-user" type="text" placeholder="Dein Benutzername" autocomplete="username"></div>
+    <div class="fg"><label class="flbl">E-Mail (optional)</label><input class="fi" id="reg-email" type="email" placeholder="name@beispiel.ch"></div>
+    <div class="fg"><label class="flbl">Passwort *</label><input class="fi" id="reg-pw" type="password" placeholder="Min. 6 Zeichen" autocomplete="new-password"></div>
+    <div id="reg-err" class="ferr" style="display:none"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="doRegister()">Konto erstellen</button>
+      <button class="btn btn-s" onclick="closeModal('register');openModal('login')">Anmelden</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-note" onclick="closeModalOutside(event,'modal-note')">
+  <div class="modal">
+    <h2 id="modal-note-title">📝 Note hinzufügen</h2><p class="modal-sub">Trage eine Note in dein Fach ein</p>
+    <input type="hidden" id="note-edit-id">
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="note-fach"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Note</label><input class="fi" id="note-val" type="number" min="1" max="6" step="0.25" placeholder="5.5"></div>
+      <div class="fg"><label class="flbl">Semester</label>
+        <select class="fi" id="note-sem">
+          <option value="1">Semester 1</option><option value="2">Semester 2</option>
+          <option value="3">Semester 3</option><option value="4">Semester 4</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">Titel / Thema</label><input class="fi" id="note-titel" type="text" placeholder="z.B. Prüfung Vektoren"></div>
+    <div class="fg"><label class="flbl">Datum</label><input class="fi" id="note-datum" type="date"></div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveNote()">Speichern</button><button class="btn btn-s" onclick="closeModal('note')">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-lernen" onclick="closeModalOutside(event,'modal-lernen')">
+  <div class="modal modal-lg">
+    <h2 id="lernen-modal-title">📚 Lerneintrag</h2><p class="modal-sub">Füge eine Lerneinheit hinzu</p>
+    <input type="hidden" id="lernen-edit-id">
+    <div class="frow">
+      <div class="fg"><label class="flbl">Fach *</label><select class="fi" id="lernen-fach" onchange="loadThemenLernen()"></select></div>
+      <div class="fg"><label class="flbl">Methode</label><select class="fi" id="lernen-methode"></select></div>
+    </div>
+    <div class="fg"><label class="flbl">Thema wählen</label>
+      <select class="fi" id="lernen-thema-sel" onchange="applyThemaLernen()"><option value="">— Thema auswählen —</option></select>
+    </div>
+    <div class="fg"><label class="flbl">Titel *</label><input class="fi" id="lernen-titel" type="text" placeholder="Was hast du gemacht?"></div>
+    <div class="fg"><label class="flbl">Beschreibung</label><textarea class="fi" id="lernen-desc" placeholder="Optionale Notizen..."></textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Dauer (Min) *</label><input class="fi" id="lernen-dauer" type="number" min="1" placeholder="45"></div>
+      <div class="fg"><label class="flbl">Datum</label><input class="fi" id="lernen-datum" type="date"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveLerneintrag()">Speichern</button><button class="btn btn-s" onclick="closeModal('lernen')">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-themen" onclick="closeModalOutside(event,'modal-themen')">
+  <div class="modal">
+    <h2>📋 Themen verwalten</h2><p class="modal-sub">Titel pro Fach hinzufügen und verwalten</p>
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="thema-fach" onchange="renderThemenList()"></select></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input class="fi" id="thema-name" placeholder="Neues Thema..." style="flex:1">
+      <button class="btn btn-p btn-sm" onclick="addThema()">+ Hinzufügen</button>
+    </div>
+    <div id="themen-list" style="max-height:260px;overflow-y:auto"></div>
+    <button class="btn btn-s" style="width:100%;margin-top:14px" onclick="closeModal('themen')">Schliessen</button>
+  </div>
+</div>
+
+<div class="overlay" id="modal-fach" onclick="closeModalOutside(event,'modal-fach')">
+  <div class="modal modal-sm">
+    <h2>🎓 Fach hinzufügen</h2><p class="modal-sub">Neues Schulfach erstellen</p>
+    <div class="fg"><label class="flbl">Fachname</label><input class="fi" id="new-fach-name" type="text" placeholder="z.B. Chemie"></div>
+    <div class="fg"><label class="flbl">Farbe</label><div class="cdots" id="fach-cdots"></div></div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveFach()">Hinzufügen</button><button class="btn btn-s" onclick="closeModal('fach')">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-methode" onclick="closeModalOutside(event,'modal-methode')">
+  <div class="modal">
+    <h2>⚡ Eigene Methode</h2><p class="modal-sub">Füge deine persönliche Lernmethode hinzu</p>
+    <div class="fg"><label class="flbl">Name</label><input class="fi" id="m-name" type="text" placeholder="z.B. Mind Maps"></div>
+    <div class="fg"><label class="flbl">Beschreibung</label><textarea class="fi" id="m-desc" placeholder="Wie funktioniert diese Methode?"></textarea></div>
+    <div class="fg"><label class="flbl">Empfehlung (Fächer)</label><input class="fi" id="m-empf" type="text" placeholder="z.B. Biologie, Geschichte"></div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveMethode()">Speichern</button><button class="btn btn-s" onclick="closeModal('methode')">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-event" onclick="closeModalOutside(event,'modal-event')">
+  <div class="modal">
+    <h2>📅 Termin planen</h2><p class="modal-sub">Plane eine Lerneinheit im Kalender</p>
+    <div class="fg"><label class="flbl">Titel</label><input class="fi" id="event-titel" placeholder="z.B. Mathe lernen"></div>
+    <div class="fg"><label class="flbl">Fach</label><select class="fi" id="event-fach"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Datum</label><input class="fi" id="event-datum" type="date"></div>
+      <div class="fg"><label class="flbl">Uhrzeit</label><input class="fi" id="event-start" type="time"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="saveEvent()">Planen</button><button class="btn btn-s" onclick="closeModal('event')">Abbrechen</button></div>
+  </div>
+</div>
+
+<!-- ══ APP (sidebar + content) ═══════════════════════════════════════════ -->
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-logo"><div class="logo-mark">📚</div>StudyFlow</div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Haupt</div>
+        <a class="nav-item {% if active_page == 'dashboard' %}active{% endif %}" href="/dashboard"><div class="nav-icon">🏠</div>Übersicht</a>
+        <a class="nav-item {% if active_page == 'noten' %}active{% endif %}" href="/noten"><div class="nav-icon">📝</div>Noten</a>
+        <a class="nav-item {% if active_page == 'lernen' %}active{% endif %}" href="/lernen"><div class="nav-icon">⏱️</div>Lernen</a>
+        <a class="nav-item {% if active_page == 'kalender' %}active{% endif %}" href="/kalender"><div class="nav-icon">📅</div>Planung</a>
+        <div class="nav-section-label">Analyse</div>
+        <a class="nav-item {% if active_page == 'statistiken' %}active{% endif %}" href="/statistiken"><div class="nav-icon">📊</div>Statistiken</a>
+        <a class="nav-item {% if active_page == 'methoden' %}active{% endif %}" href="/methoden"><div class="nav-icon">⚡</div>Lernmethoden</a>
+        <div class="nav-section-label">Konto</div>
+        <a class="nav-item {% if active_page == 'einstellungen' %}active{% endif %}" href="/einstellungen"><div class="nav-icon">⚙️</div>Einstellungen</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="user-av" id="sidebar-uav">A</div>
+          <div><div class="user-name" id="sidebar-uname">Benutzer</div><div class="user-sub">Eingeloggt</div></div>
+        </div>
+        <a class="nav-item" onclick="doLogout()" style="cursor:pointer"><div class="nav-icon">👋</div>Abmelden</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="burger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+        <h1 class="topbar-title">{% block page_title %}Übersicht{% endblock %}</h1>
+      </div>
+      <div class="topbar-right">
+        {% block topbar_actions %}{% endblock %}
+        <button id="theme-btn" class="theme-btn" onclick="toggleTheme()">🌙</button>
+      </div>
+    </div>
+    <div class="page-content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+<!-- ══ LANDING ════════════════════════════════════════════════════════════ -->
+<div id="landing">
+  <nav class="land-nav">
+    <div class="land-logo"><div class="logo-mark">📚</div>StudyFlow</div>
+    <div class="land-actions">
+      <button id="theme-btn" class="theme-btn" onclick="toggleTheme()">🌙</button>
+      <button class="btn btn-s btn-sm" onclick="openModal('login')">Anmelden</button>
+      <button class="btn btn-p btn-sm" onclick="openModal('register')">Registrieren</button>
+    </div>
+  </nav>
+  <div class="hero">
+    <div class="hero-eyebrow">✦ IDPA — Berufsmatura Lernplattform</div>
+    <h1>Lerne <em>smarter</em>,<br>nicht härter.</h1>
+    <p>Lernzeit tracken, Noten verwalten und Fortschritt mit coolen Grafiken sichtbar machen.</p>
+    <div class="hero-btns">
+      <button class="btn btn-p" onclick="openModal('register')">Jetzt starten →</button>
+      <button class="btn btn-s" onclick="openModal('login')">Ich hab schon ein Konto</button>
+    </div>
+    <div class="feat-strip">
+      <div class="feat-chip"><span>⏱️</span> Timer & Einträge</div>
+      <div class="feat-chip"><span>📊</span> 5 Diagramme</div>
+      <div class="feat-chip"><span>📅</span> Drag & Drop Kalender</div>
+      <div class="feat-chip"><span>📝</span> Noten & Durchschnitte</div>
+      <div class="feat-chip"><span>🌙</span> Dark Mode</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══════════════════════════════════════════════════════════════ -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script src="/static/js/core.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

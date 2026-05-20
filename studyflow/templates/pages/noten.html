@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Noten{% endblock %}
+{% block page_title %}Noten{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-s btn-sm" onclick="openModal('fach')">+ Fach</button>
+  <button class="btn btn-p btn-sm" onclick="openAddNote()">+ Note</button>
+{% endblock %}
+{% block content %}
+<div id="noten-list"><div class="empty"><div class="empty-icon">📝</div><h3>Lade...</h3></div></div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/noten.js"></script>{% endblock %}

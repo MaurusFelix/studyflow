@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Übersicht{% endblock %}
+{% block page_title %}Übersicht{% endblock %}
+
+{% block content %}
+<div class="grid-4" id="dash-stats" style="margin-bottom:24px">
+  <div class="stat-card skeleton"><div class="stat-icon">⏱️</div><div class="stat-label">Lade...</div><div class="stat-val">–</div></div>
+  <div class="stat-card skeleton"><div class="stat-icon">🎓</div><div class="stat-label">Lade...</div><div class="stat-val">–</div></div>
+  <div class="stat-card skeleton"><div class="stat-icon">📝</div><div class="stat-label">Lade...</div><div class="stat-val">–</div></div>
+  <div class="stat-card skeleton"><div class="stat-icon">⭐</div><div class="stat-label">Lade...</div><div class="stat-val">–</div></div>
+</div>
+<div class="grid-2" style="margin-bottom:24px">
+  <div class="chart-card">
+    <div class="chart-title">📚 Lernzeit pro Fach</div>
+    <div class="chart-sub">Gesamte Lernzeit in Stunden</div>
+    <div class="chart-wrap"><canvas id="ch-dash-fach"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Notendurchschnitte</div>
+    <div class="chart-sub">Alle Fächer im Überblick</div>
+    <div class="chart-wrap"><canvas id="ch-dash-noten"></canvas></div>
+  </div>
+</div>
+<div class="sec-head">
+  <div><div class="sec-title">Letzte Lerneinträge</div><div class="sec-sub">Deine letzten 5 Einträge</div></div>
+  <a href="/lernen" class="btn btn-s btn-sm">Alle anzeigen →</a>
+</div>
+<div id="dash-eintraege"></div>
+{% endblock %}
+
+{% block scripts %}<script src="/static/js/dashboard.js"></script>{% endblock %}

@@ -45,6 +45,13 @@ def init_db():
             settings TEXT DEFAULT '{}'
         );
 
+        CREATE TABLE IF NOT EXISTS semester (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+
         CREATE TABLE IF NOT EXISTS faecher (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -55,30 +62,21 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
 
-        CREATE TABLE IF NOT EXISTS semester_labels (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            reihenfolge INTEGER DEFAULT 0,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        );
-
         CREATE TABLE IF NOT EXISTS noten (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             fach_id INTEGER NOT NULL,
+            thema_id INTEGER,
             note REAL NOT NULL,
             gewichtung REAL DEFAULT 1.0,
             titel TEXT,
-            thema_id INTEGER,
             datum DATE NOT NULL,
-            semester_label_id INTEGER,
+            semester TEXT,
             notiz TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (fach_id) REFERENCES faecher(id),
-            FOREIGN KEY (thema_id) REFERENCES themen(id),
-            FOREIGN KEY (semester_label_id) REFERENCES semester_labels(id)
+            FOREIGN KEY (thema_id) REFERENCES themen(id)
         );
 
         CREATE TABLE IF NOT EXISTS lernmethoden (
@@ -88,7 +86,8 @@ def init_db():
             beschreibung TEXT,
             empfehlung TEXT,
             ist_vordefiniert INTEGER DEFAULT 0,
-            farbe TEXT DEFAULT '#4F8EF7'
+            farbe TEXT DEFAULT '#4F8EF7',
+            icon TEXT DEFAULT 'BookOpen'
         );
 
         CREATE TABLE IF NOT EXISTS lerneintraege (
@@ -96,7 +95,6 @@ def init_db():
             user_id INTEGER NOT NULL,
             fach_id INTEGER NOT NULL,
             methode_id INTEGER,
-            thema_id INTEGER,
             titel TEXT NOT NULL,
             beschreibung TEXT,
             dauer_minuten INTEGER NOT NULL,
@@ -107,8 +105,7 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (fach_id) REFERENCES faecher(id),
-            FOREIGN KEY (methode_id) REFERENCES lernmethoden(id),
-            FOREIGN KEY (thema_id) REFERENCES themen(id)
+            FOREIGN KEY (methode_id) REFERENCES lernmethoden(id)
         );
 
         CREATE TABLE IF NOT EXISTS themen (
@@ -136,18 +133,19 @@ def init_db():
         );
     ''')
 
-    # Migration: add new columns to existing tables if they don't exist
-    migrations = [
-        "ALTER TABLE noten ADD COLUMN gewichtung REAL DEFAULT 1.0",
-        "ALTER TABLE noten ADD COLUMN thema_id INTEGER",
-        "ALTER TABLE noten ADD COLUMN semester_label_id INTEGER",
-        "ALTER TABLE lerneintraege ADD COLUMN thema_id INTEGER",
-    ]
-    for sql in migrations:
-        try:
-            c.execute(sql)
-        except Exception:
-            pass
+    # Migrations for existing DBs
+    try:
+        c.execute("ALTER TABLE noten ADD COLUMN thema_id INTEGER")
+    except: pass
+    try:
+        c.execute("ALTER TABLE noten ADD COLUMN gewichtung REAL DEFAULT 1.0")
+    except: pass
+    try:
+        c.execute("ALTER TABLE lernmethoden ADD COLUMN icon TEXT DEFAULT 'BookOpen'")
+    except: pass
+    try:
+        c.execute("CREATE TABLE IF NOT EXISTS semester (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id))")
+    except: pass
 
     # Default admin user
     try:
@@ -155,10 +153,9 @@ def init_db():
                   ('admin', hash_password('Chur7000'), 'admin@lernapp.ch'))
         admin_id = c.lastrowid
 
-        # Default semester labels
-        sems = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4']
-        for i, s in enumerate(sems):
-            c.execute("INSERT INTO semester_labels (user_id, name, reihenfolge) VALUES (?,?,?)", (admin_id, s, i))
+        # Default Semester
+        for sem in ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4']:
+            c.execute("INSERT INTO semester (user_id, name) VALUES (?, ?)", (admin_id, sem))
 
         # Default Fächer für admin
         faecher_default = [
@@ -174,32 +171,31 @@ def init_db():
 
         # Default Lernmethoden (global, user_id=NULL = vordefiniert)
         methoden = [
-            (None, 'Karteikarten', 'Lernkarten erstellen und wiederholen', 'Vokabeln, Definitionen, Formeln', 1, '#EF4444'),
-            (None, 'Videos', 'Erklärvideos ansehen und nachvollziehen', 'Physik, Mathematik, Informatik', 1, '#3B82F6'),
-            (None, 'Aufgaben lösen', 'Übungsaufgaben selbstständig lösen', 'Mathematik, Physik, Informatik', 1, '#10B981'),
-            (None, 'Active Recall', 'Stoff aus dem Gedächtnis wiedergeben', 'Alle Fächer', 1, '#F59E0B'),
-            (None, 'Zusammenfassung', 'Eigene Zusammenfassungen schreiben', 'Deutsch, Geschichte, W&R', 1, '#8B5CF6'),
-            (None, 'Lesen', 'Texte und Bücher lesen', 'Deutsch, Englisch', 1, '#EC4899'),
-            (None, 'Spaced Repetition', 'Wiederholung in steigenden Zeitintervallen', 'Alle Fächer', 1, '#06B6D4'),
-            (None, 'Pomodoro', '25 Min. lernen, 5 Min. Pause', 'Alle Fächer', 1, '#F97316'),
-            (None, 'Mind Map', 'Themen visuell als Gedankenkarte strukturieren', 'Geschichte, Biologie, W&R', 1, '#84CC16'),
+            (None, 'Karteikarten', 'Lernkarten erstellen und wiederholen', 'Vokabeln, Definitionen, Formeln', 1, '#EF4444', 'CreditCard'),
+            (None, 'Videos', 'Erklärvideos ansehen und nachvollziehen', 'Physik, Mathematik, Informatik', 1, '#3B82F6', 'Play'),
+            (None, 'Aufgaben lösen', 'Übungsaufgaben selbstständig lösen', 'Mathematik, Physik, Informatik', 1, '#10B981', 'PenLine'),
+            (None, 'Active Recall', 'Stoff aus dem Gedächtnis wiedergeben', 'Alle Fächer', 1, '#F59E0B', 'Brain'),
+            (None, 'Zusammenfassung', 'Eigene Zusammenfassungen schreiben', 'Deutsch, Geschichte, W&R', 1, '#8B5CF6', 'FileText'),
+            (None, 'Lesen', 'Texte und Bücher lesen', 'Deutsch, Englisch', 1, '#EC4899', 'BookOpen'),
+            (None, 'Spaced Repetition', 'Wiederholung in steigenden Zeitintervallen', 'Alle Fächer', 1, '#06B6D4', 'RefreshCw'),
+            (None, 'Pomodoro', '25 Min. lernen, 5 Min. Pause', 'Alle Fächer', 1, '#F97316', 'Timer'),
+            (None, 'Mind Map', 'Themen visuell als Gedankenkarte strukturieren', 'Geschichte, Biologie, W&R', 1, '#84CC16', 'Network'),
         ]
-        c.executemany("INSERT INTO lernmethoden (user_id, name, beschreibung, empfehlung, ist_vordefiniert, farbe) VALUES (?,?,?,?,?,?)", methoden)
+        c.executemany("INSERT INTO lernmethoden (user_id, name, beschreibung, empfehlung, ist_vordefiniert, farbe, icon) VALUES (?,?,?,?,?,?,?)", methoden)
 
         # Sample Noten für admin
         from datetime import date
         today = date.today()
         fach_ids = [row[0] for row in c.execute("SELECT id FROM faecher WHERE user_id=?", (admin_id,)).fetchall()]
-        sem_ids = [row[0] for row in c.execute("SELECT id FROM semester_labels WHERE user_id=? ORDER BY reihenfolge", (admin_id,)).fetchall()]
         sample_noten = [
-            (admin_id, fach_ids[0], 5.5, 1.0, 'Prüfung Algebra', str(today - timedelta(days=14)), sem_ids[0] if sem_ids else None),
-            (admin_id, fach_ids[0], 4.5, 1.0, 'Test Vektoren', str(today - timedelta(days=30)), sem_ids[0] if sem_ids else None),
-            (admin_id, fach_ids[1], 5.0, 1.0, 'Aufsatz', str(today - timedelta(days=7)), sem_ids[0] if sem_ids else None),
-            (admin_id, fach_ids[2], 5.5, 1.0, 'Vocabulary Test', str(today - timedelta(days=10)), sem_ids[0] if sem_ids else None),
-            (admin_id, fach_ids[3], 4.0, 1.0, 'Wirtschaftsrecht Prüfung', str(today - timedelta(days=20)), sem_ids[0] if sem_ids else None),
-            (admin_id, fach_ids[4], 5.0, 1.0, 'Mechanik Test', str(today - timedelta(days=5)), sem_ids[0] if sem_ids else None),
+            (admin_id, fach_ids[0], 5.5, 'Prüfung Algebra', str(today - timedelta(days=14)), '1', 1.0),
+            (admin_id, fach_ids[0], 4.5, 'Test Vektoren', str(today - timedelta(days=30)), '1', 0.5),
+            (admin_id, fach_ids[1], 5.0, 'Aufsatz', str(today - timedelta(days=7)), '1', 1.0),
+            (admin_id, fach_ids[2], 5.5, 'Vocabulary Test', str(today - timedelta(days=10)), '1', 1.0),
+            (admin_id, fach_ids[3], 4.0, 'Wirtschaftsrecht Prüfung', str(today - timedelta(days=20)), '1', 1.0),
+            (admin_id, fach_ids[4], 5.0, 'Mechanik Test', str(today - timedelta(days=5)), '1', 1.0),
         ]
-        c.executemany("INSERT INTO noten (user_id, fach_id, note, gewichtung, titel, datum, semester_label_id) VALUES (?,?,?,?,?,?,?)", sample_noten)
+        c.executemany("INSERT INTO noten (user_id, fach_id, note, titel, datum, semester, gewichtung) VALUES (?,?,?,?,?,?,?)", sample_noten)
 
         # Sample Lerneinträge
         sample_lernen = [
@@ -243,10 +239,9 @@ def register():
         c.execute("INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)",
                   (data['username'], hash_password(data['password']), data.get('email', '')))
         user_id = c.lastrowid
-        # Default Semester Labels
-        sems = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4']
-        for i, s in enumerate(sems):
-            c.execute("INSERT INTO semester_labels (user_id, name, reihenfolge) VALUES (?,?,?)", (user_id, s, i))
+        # Default Semester
+        for sem in ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4']:
+            c.execute("INSERT INTO semester (user_id, name) VALUES (?, ?)", (user_id, sem))
         # Default Fächer
         faecher_default = [
             ('Mathematik', '#EF4444'), ('Deutsch', '#3B82F6'), ('Englisch', '#10B981'),
@@ -273,6 +268,35 @@ def me():
     if 'user_id' not in session:
         return jsonify({'logged_in': False}), 401
     return jsonify({'logged_in': True, 'username': session['username'], 'id': session['user_id']})
+
+# ─── SEMESTER ─────────────────────────────────────────────────────────────────
+
+@app.route('/api/semester', methods=['GET'])
+def get_semester():
+    if 'user_id' not in session: return jsonify([]), 401
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM semester WHERE user_id=? ORDER BY id", (session['user_id'],)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/semester', methods=['POST'])
+def add_semester():
+    if 'user_id' not in session: return jsonify({}), 401
+    data = request.json
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("INSERT INTO semester (user_id, name) VALUES (?, ?)", (session['user_id'], data['name']))
+    sid = c.lastrowid
+    conn.commit(); conn.close()
+    return jsonify({'id': sid, 'name': data['name']})
+
+@app.route('/api/semester/<int:sid>', methods=['DELETE'])
+def delete_semester(sid):
+    if 'user_id' not in session: return jsonify({}), 401
+    conn = get_db()
+    conn.execute("DELETE FROM semester WHERE id=? AND user_id=?", (sid, session['user_id']))
+    conn.commit(); conn.close()
+    return jsonify({'success': True})
 
 # ─── FÄCHER ──────────────────────────────────────────────────────────────────
 
@@ -315,38 +339,6 @@ def delete_fach(fid):
     conn.commit(); conn.close()
     return jsonify({'success': True})
 
-# ─── SEMESTER LABELS ─────────────────────────────────────────────────────────
-
-@app.route('/api/semester', methods=['GET'])
-def get_semester():
-    if 'user_id' not in session: return jsonify([]), 401
-    conn = get_db()
-    rows = conn.execute("SELECT * FROM semester_labels WHERE user_id=? ORDER BY reihenfolge, id", (session['user_id'],)).fetchall()
-    conn.close()
-    return jsonify([dict(r) for r in rows])
-
-@app.route('/api/semester', methods=['POST'])
-def add_semester():
-    if 'user_id' not in session: return jsonify({}), 401
-    data = request.json
-    conn = get_db()
-    c = conn.cursor()
-    max_ord = conn.execute("SELECT COALESCE(MAX(reihenfolge),0) FROM semester_labels WHERE user_id=?", (session['user_id'],)).fetchone()[0]
-    c.execute("INSERT INTO semester_labels (user_id, name, reihenfolge) VALUES (?,?,?)",
-              (session['user_id'], data['name'], max_ord + 1))
-    sid = c.lastrowid; conn.commit()
-    row = conn.execute("SELECT * FROM semester_labels WHERE id=?", (sid,)).fetchone()
-    conn.close()
-    return jsonify(dict(row))
-
-@app.route('/api/semester/<int:sid>', methods=['DELETE'])
-def delete_semester(sid):
-    if 'user_id' not in session: return jsonify({}), 401
-    conn = get_db()
-    conn.execute("DELETE FROM semester_labels WHERE id=? AND user_id=?", (sid, session['user_id']))
-    conn.commit(); conn.close()
-    return jsonify({'success': True})
-
 # ─── NOTEN ───────────────────────────────────────────────────────────────────
 
 @app.route('/api/noten', methods=['GET'])
@@ -355,9 +347,8 @@ def get_noten():
     conn = get_db()
     rows = conn.execute("""
         SELECT n.*, f.name as fach_name, f.farbe as fach_farbe,
-               sl.name as semester_name, t.name as thema_name
+               t.name as thema_name
         FROM noten n JOIN faecher f ON n.fach_id=f.id
-        LEFT JOIN semester_labels sl ON n.semester_label_id=sl.id
         LEFT JOIN themen t ON n.thema_id=t.id
         WHERE n.user_id=? ORDER BY n.datum DESC
     """, (session['user_id'],)).fetchall()
@@ -370,37 +361,31 @@ def add_note():
     data = request.json
     conn = get_db()
     c = conn.cursor()
-    c.execute("INSERT INTO noten (user_id, fach_id, note, gewichtung, titel, thema_id, datum, semester_label_id, notiz) VALUES (?,?,?,?,?,?,?,?,?)",
-              (session['user_id'], data['fach_id'], data['note'],
+    c.execute("INSERT INTO noten (user_id, fach_id, thema_id, note, gewichtung, titel, datum, semester, notiz) VALUES (?,?,?,?,?,?,?,?,?)",
+              (session['user_id'], data['fach_id'], data.get('thema_id'), data['note'],
                data.get('gewichtung', 1.0), data.get('titel',''),
-               data.get('thema_id') or None,
-               data['datum'], data.get('semester_label_id') or None, data.get('notiz','')))
+               data['datum'], data.get('semester','1'), data.get('notiz','')))
     note_id = c.lastrowid
     conn.commit()
-    row = conn.execute("""SELECT n.*, f.name as fach_name, f.farbe as fach_farbe,
-               sl.name as semester_name, t.name as thema_name
-        FROM noten n JOIN faecher f ON n.fach_id=f.id
-        LEFT JOIN semester_labels sl ON n.semester_label_id=sl.id
-        LEFT JOIN themen t ON n.thema_id=t.id WHERE n.id=?""", (note_id,)).fetchone()
+    row = conn.execute("""SELECT n.*, f.name as fach_name, f.farbe as fach_farbe, t.name as thema_name
+                          FROM noten n JOIN faecher f ON n.fach_id=f.id
+                          LEFT JOIN themen t ON n.thema_id=t.id WHERE n.id=?""", (note_id,)).fetchone()
     conn.close()
-    return jsonify(dict(row) if row else {'id': note_id})
+    return jsonify(dict(row))
 
 @app.route('/api/noten/<int:nid>', methods=['PUT'])
 def update_note(nid):
     if 'user_id' not in session: return jsonify({}), 401
     data = request.json
     conn = get_db()
-    conn.execute("UPDATE noten SET note=?, gewichtung=?, titel=?, thema_id=?, datum=?, semester_label_id=?, notiz=? WHERE id=? AND user_id=?",
-                 (data['note'], data.get('gewichtung', 1.0), data.get('titel',''),
-                  data.get('thema_id') or None,
-                  data['datum'], data.get('semester_label_id') or None,
+    conn.execute("UPDATE noten SET note=?, gewichtung=?, thema_id=?, titel=?, datum=?, semester=?, notiz=? WHERE id=? AND user_id=?",
+                 (data['note'], data.get('gewichtung', 1.0), data.get('thema_id'),
+                  data.get('titel',''), data['datum'], data.get('semester','1'),
                   data.get('notiz',''), nid, session['user_id']))
     conn.commit()
-    row = conn.execute("""SELECT n.*, f.name as fach_name, f.farbe as fach_farbe,
-               sl.name as semester_name, t.name as thema_name
-        FROM noten n JOIN faecher f ON n.fach_id=f.id
-        LEFT JOIN semester_labels sl ON n.semester_label_id=sl.id
-        LEFT JOIN themen t ON n.thema_id=t.id WHERE n.id=?""", (nid,)).fetchone()
+    row = conn.execute("""SELECT n.*, f.name as fach_name, f.farbe as fach_farbe, t.name as thema_name
+                          FROM noten n JOIN faecher f ON n.fach_id=f.id
+                          LEFT JOIN themen t ON n.thema_id=t.id WHERE n.id=?""", (nid,)).fetchone()
     conn.close()
     return jsonify(dict(row) if row else {'id': nid})
 
@@ -428,12 +413,13 @@ def add_lernmethode():
     data = request.json
     conn = get_db()
     c = conn.cursor()
-    c.execute("INSERT INTO lernmethoden (user_id, name, beschreibung, empfehlung, farbe) VALUES (?,?,?,?,?)",
-              (session['user_id'], data['name'], data.get('beschreibung',''), data.get('empfehlung',''), data.get('farbe','#4F8EF7')))
+    c.execute("INSERT INTO lernmethoden (user_id, name, beschreibung, empfehlung, farbe, icon) VALUES (?,?,?,?,?,?)",
+              (session['user_id'], data['name'], data.get('beschreibung',''), data.get('empfehlung',''),
+               data.get('farbe','#4F8EF7'), data.get('icon','BookOpen')))
     mid = c.lastrowid; conn.commit()
     row = conn.execute("SELECT * FROM lernmethoden WHERE id=?", (mid,)).fetchone()
     conn.close()
-    return jsonify(dict(row) if row else {'id': mid})
+    return jsonify(dict(row))
 
 @app.route('/api/lernmethoden/<int:mid>', methods=['DELETE'])
 def delete_lernmethode(mid):
@@ -443,19 +429,16 @@ def delete_lernmethode(mid):
     conn.commit(); conn.close()
     return jsonify({'success': True})
 
-# ─── LERNEINTRÄGE ────────────────────────────────────────────────────────────
+# ─── LERNEINTRÄGE ─────────────────────────────────────────────────────────────
 
 @app.route('/api/lerneintraege', methods=['GET'])
 def get_lerneintraege():
     if 'user_id' not in session: return jsonify([]), 401
     conn = get_db()
     rows = conn.execute("""
-        SELECT l.*, f.name as fach_name, f.farbe as fach_farbe, m.name as methode_name,
-               t.name as thema_name
-        FROM lerneintraege l
-        JOIN faecher f ON l.fach_id=f.id
+        SELECT l.*, f.name as fach_name, f.farbe, m.name as methode_name, m.farbe as methode_farbe, m.icon as methode_icon
+        FROM lerneintraege l JOIN faecher f ON l.fach_id=f.id
         LEFT JOIN lernmethoden m ON l.methode_id=m.id
-        LEFT JOIN themen t ON l.thema_id=t.id
         WHERE l.user_id=? ORDER BY l.datum DESC, l.created_at DESC
     """, (session['user_id'],)).fetchall()
     conn.close()
@@ -467,18 +450,14 @@ def add_lerneintrag():
     data = request.json
     conn = get_db()
     c = conn.cursor()
-    c.execute("""INSERT INTO lerneintraege
-        (user_id, fach_id, methode_id, thema_id, titel, beschreibung, dauer_minuten, datum, uhrzeit_start, uhrzeit_ende, geplant)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-        (session['user_id'], data['fach_id'], data.get('methode_id'),
-         data.get('thema_id') or None,
-         data['titel'],
-         data.get('beschreibung',''), data['dauer_minuten'], data['datum'],
-         data.get('uhrzeit_start',''), data.get('uhrzeit_ende',''), data.get('geplant', 0)))
+    c.execute("""INSERT INTO lerneintraege (user_id, fach_id, methode_id, titel, beschreibung, dauer_minuten, datum, geplant)
+                 VALUES (?,?,?,?,?,?,?,?)""",
+              (session['user_id'], data['fach_id'], data.get('methode_id'), data['titel'],
+               data.get('beschreibung',''), data['dauer_minuten'], data['datum'], data.get('geplant',0)))
     eid = c.lastrowid; conn.commit()
-    row = conn.execute("""SELECT l.*, f.name as fach_name, f.farbe as fach_farbe, t.name as thema_name
-        FROM lerneintraege l LEFT JOIN faecher f ON l.fach_id=f.id
-        LEFT JOIN themen t ON l.thema_id=t.id WHERE l.id=?""", (eid,)).fetchone()
+    row = conn.execute("""SELECT l.*, f.name as fach_name, f.farbe, m.name as methode_name
+                          FROM lerneintraege l JOIN faecher f ON l.fach_id=f.id
+                          LEFT JOIN lernmethoden m ON l.methode_id=m.id WHERE l.id=?""", (eid,)).fetchone()
     conn.close()
     return jsonify(dict(row) if row else {'id': eid})
 
@@ -487,16 +466,14 @@ def update_lerneintrag(eid):
     if 'user_id' not in session: return jsonify({}), 401
     data = request.json
     conn = get_db()
-    conn.execute("""UPDATE lerneintraege SET fach_id=?, methode_id=?, thema_id=?, titel=?, beschreibung=?,
-        dauer_minuten=?, datum=?, uhrzeit_start=?, uhrzeit_ende=?, geplant=?
-        WHERE id=? AND user_id=?""",
-        (data['fach_id'], data.get('methode_id'), data.get('thema_id') or None,
-         data['titel'], data.get('beschreibung',''),
-         data['dauer_minuten'], data['datum'], data.get('uhrzeit_start',''),
-         data.get('uhrzeit_ende',''), data.get('geplant',0), eid, session['user_id']))
+    conn.execute("""UPDATE lerneintraege SET fach_id=?, methode_id=?, titel=?, beschreibung=?,
+                    dauer_minuten=?, datum=? WHERE id=? AND user_id=?""",
+                 (data['fach_id'], data.get('methode_id'), data['titel'], data.get('beschreibung',''),
+                  data['dauer_minuten'], data['datum'], eid, session['user_id']))
     conn.commit()
-    row = conn.execute("""SELECT l.*, f.name as fach_name, f.farbe as fach_farbe
-        FROM lerneintraege l LEFT JOIN faecher f ON l.fach_id=f.id WHERE l.id=?""", (eid,)).fetchone()
+    row = conn.execute("""SELECT l.*, f.name as fach_name, f.farbe, m.name as methode_name
+                          FROM lerneintraege l JOIN faecher f ON l.fach_id=f.id
+                          LEFT JOIN lernmethoden m ON l.methode_id=m.id WHERE l.id=?""", (eid,)).fetchone()
     conn.close()
     return jsonify(dict(row) if row else {'id': eid})
 
@@ -515,8 +492,7 @@ def get_themen():
     if 'user_id' not in session: return jsonify([]), 401
     conn = get_db()
     rows = conn.execute("""
-        SELECT t.*, f.name as fach_name FROM themen t
-        JOIN faecher f ON t.fach_id=f.id
+        SELECT t.*, f.name as fach_name FROM themen t JOIN faecher f ON t.fach_id=f.id
         WHERE t.user_id=? ORDER BY t.fach_id, t.name
     """, (session['user_id'],)).fetchall()
     conn.close()
@@ -533,21 +509,27 @@ def add_thema():
     tid = c.lastrowid; conn.commit()
     row = conn.execute("SELECT t.*, f.name as fach_name FROM themen t JOIN faecher f ON t.fach_id=f.id WHERE t.id=?", (tid,)).fetchone()
     conn.close()
-    return jsonify(dict(row) if row else {'id': tid})
+    return jsonify(dict(row))
 
 @app.route('/api/themen/<int:tid>', methods=['PUT'])
 def update_thema(tid):
     if 'user_id' not in session: return jsonify({}), 401
     data = request.json
     conn = get_db()
-    if 'name' in data:
+    # Support renaming
+    if 'name' in data and 'abgeschlossen' in data:
+        conn.execute("UPDATE themen SET name=?, abgeschlossen=? WHERE id=? AND user_id=?",
+                     (data['name'], data['abgeschlossen'], tid, session['user_id']))
+    elif 'name' in data:
         conn.execute("UPDATE themen SET name=? WHERE id=? AND user_id=?",
                      (data['name'], tid, session['user_id']))
-    if 'abgeschlossen' in data:
+    else:
         conn.execute("UPDATE themen SET abgeschlossen=? WHERE id=? AND user_id=?",
-                     (data['abgeschlossen'], tid, session['user_id']))
-    conn.commit(); conn.close()
-    return jsonify({'success': True})
+                     (data.get('abgeschlossen',0), tid, session['user_id']))
+    conn.commit()
+    row = conn.execute("SELECT t.*, f.name as fach_name FROM themen t JOIN faecher f ON t.fach_id=f.id WHERE t.id=?", (tid,)).fetchone()
+    conn.close()
+    return jsonify(dict(row) if row else {'id': tid})
 
 @app.route('/api/themen/<int:tid>', methods=['DELETE'])
 def delete_thema(tid):
@@ -585,11 +567,10 @@ def dashboard_stats():
         GROUP BY f.id ORDER BY total DESC
     """, (uid, uid)).fetchall()
 
-    # Weighted average
     avg_noten = conn.execute("""
         SELECT f.name, f.farbe,
-               CASE WHEN SUM(COALESCE(n.gewichtung,1.0))>0
-                    THEN ROUND(SUM(n.note * COALESCE(n.gewichtung,1.0)) / SUM(COALESCE(n.gewichtung,1.0)), 2)
+               CASE WHEN SUM(n.gewichtung) > 0
+                    THEN ROUND(SUM(n.note * n.gewichtung) / SUM(n.gewichtung), 2)
                     ELSE NULL END as avg,
                COUNT(n.id) as count
         FROM faecher f LEFT JOIN noten n ON f.id=n.fach_id AND n.user_id=?
@@ -650,19 +631,20 @@ def auswertung_stats():
         GROUP BY datum ORDER BY datum DESC LIMIT 30
     """, (uid,)).fetchall()
 
-    # Thema stats: per thema, lernzeit vs avg note
+    # Thema stats: for each thema, get lernzeit and note
     thema_stats = conn.execute("""
-        SELECT t.id, t.name, f.name as fach_name, f.farbe,
+        SELECT t.id, t.name, t.fach_id, f.name as fach_name, f.farbe,
                COALESCE(SUM(l.dauer_minuten),0) as lernzeit,
-               CASE WHEN COUNT(n.id)>0
-                    THEN ROUND(SUM(n.note * COALESCE(n.gewichtung,1.0)) / SUM(COALESCE(n.gewichtung,1.0)),2)
+               CASE WHEN SUM(n.gewichtung) > 0
+                    THEN ROUND(SUM(n.note * n.gewichtung) / SUM(n.gewichtung), 2)
                     ELSE NULL END as avg_note
         FROM themen t
-        LEFT JOIN faecher f ON t.fach_id=f.id
-        LEFT JOIN lerneintraege l ON l.thema_id=t.id AND l.user_id=t.user_id AND l.geplant=0
+        JOIN faecher f ON t.fach_id=f.id
+        LEFT JOIN lerneintraege l ON l.fach_id=t.fach_id AND l.user_id=t.user_id AND l.titel=t.name AND l.geplant=0
         LEFT JOIN noten n ON n.thema_id=t.id AND n.user_id=t.user_id
         WHERE t.user_id=?
-        GROUP BY t.id ORDER BY lernzeit DESC
+        GROUP BY t.id
+        HAVING lernzeit > 0 OR avg_note IS NOT NULL
     """, (uid,)).fetchall()
 
     conn.close()
@@ -727,6 +709,33 @@ def delete_kalender(kid):
     conn.commit(); conn.close()
     return jsonify({'success': True})
 
+@app.route('/api/kalender/<int:kid>', methods=['PUT'])
+def update_kalender(kid):
+    if 'user_id' not in session: return jsonify({}), 401
+    data = request.json
+    conn = get_db()
+    existing = conn.execute("SELECT * FROM kalender_events WHERE id=? AND user_id=?",
+                            (kid, session['user_id'])).fetchone()
+    if not existing:
+        conn.close(); return jsonify({}), 404
+    existing = dict(existing)
+    titel   = data.get('titel',         existing['titel'])
+    fach_id = data.get('fach_id',       existing['fach_id'])
+    datum   = data.get('datum',         existing['datum'])
+    uhrzeit = data.get('uhrzeit_start', existing.get('uhrzeit_start',''))
+    typ     = data.get('typ',           existing.get('typ','geplant'))
+    conn.execute("""UPDATE kalender_events SET titel=?, fach_id=?, datum=?, uhrzeit_start=?, typ=?
+                    WHERE id=? AND user_id=?""",
+                 (titel, fach_id, datum, uhrzeit, typ, kid, session['user_id']))
+    conn.commit()
+    row = conn.execute("""SELECT k.*, f.name as fach_name, f.farbe as fach_farbe
+                           FROM kalender_events k LEFT JOIN faecher f ON k.fach_id=f.id
+                           WHERE k.id=?""", (kid,)).fetchone()
+    conn.close()
+    return jsonify(dict(row) if row else {'id': kid})
+
+# ─── SETTINGS ────────────────────────────────────────────────────────────────
+
 @app.route('/api/settings', methods=['GET'])
 def get_settings():
     if 'user_id' not in session: return jsonify({}), 401
@@ -746,30 +755,7 @@ def update_settings():
     conn.commit(); conn.close()
     return jsonify({'success': True})
 
-@app.route('/api/kalender/<int:kid>', methods=['PUT'])
-def update_kalender(kid):
-    if 'user_id' not in session: return jsonify({}), 401
-    data = request.json
-    conn = get_db()
-    existing = conn.execute("SELECT * FROM kalender_events WHERE id=? AND user_id=?",
-                            (kid, session['user_id'])).fetchone()
-    if not existing:
-        conn.close(); return jsonify({}), 404
-    existing = dict(existing)
-    titel        = data.get('titel',         existing['titel'])
-    fach_id      = data.get('fach_id',       existing['fach_id'])
-    datum        = data.get('datum',         existing['datum'])
-    uhrzeit      = data.get('uhrzeit_start', existing.get('uhrzeit_start',''))
-    typ          = data.get('typ',           existing.get('typ','geplant'))
-    conn.execute("""UPDATE kalender_events SET titel=?, fach_id=?, datum=?, uhrzeit_start=?, typ=?
-                    WHERE id=? AND user_id=?""",
-                 (titel, fach_id, datum, uhrzeit, typ, kid, session['user_id']))
-    conn.commit()
-    row = conn.execute("""SELECT k.*, f.name as fach_name, f.farbe as fach_farbe
-                           FROM kalender_events k LEFT JOIN faecher f ON k.fach_id=f.id
-                           WHERE k.id=?""", (kid,)).fetchone()
-    conn.close()
-    return jsonify(dict(row) if row else {'id': kid})
+# ─── PAGE ROUTES ─────────────────────────────────────────────────────────────
 
 @app.route('/')
 @app.route('/dashboard')
@@ -785,4 +771,4 @@ def index():
 if __name__ == "__main__":
     init_db()
     print("✅ StudyFlow v3 gestartet.")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=True, port=5000)

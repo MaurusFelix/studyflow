@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Statistiken{% endblock %}
+{% block page_title %}Statistiken{% endblock %}
+{% block content %}
+<div class="grid-2" style="margin-bottom:20px">
+  <div class="chart-card">
+    <div class="chart-title">📚 Lernzeit pro Fach</div>
+    <div class="chart-sub">Gesamte Stunden je Fach</div>
+    <div class="chart-wrap chart-wrap-lg"><canvas id="ch-stat-fach"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">⚡ Lernzeit pro Methode</div>
+    <div class="chart-sub">Welche Methode nutzt du am meisten?</div>
+    <div class="chart-wrap"><canvas id="ch-stat-meth"></canvas></div>
+  </div>
+</div>
+<div class="grid-2" style="margin-bottom:20px">
+  <div class="chart-card">
+    <div class="chart-title">📈 Note vs. Lernmethode</div>
+    <div class="chart-sub">Welche Methode bringt die besten Noten?</div>
+    <div class="chart-wrap"><canvas id="ch-note-meth"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">🗓️ Lernverlauf (30 Tage)</div>
+    <div class="chart-sub">Tägliche Lernminuten</div>
+    <div class="chart-wrap chart-wrap-lg"><canvas id="ch-verlauf"></canvas></div>
+  </div>
+</div>
+<div class="chart-card">
+  <div class="chart-title">🎯 Lernzeit & Noten Radar</div>
+  <div class="chart-sub">Vergleich aller Fächer auf einen Blick</div>
+  <div class="chart-wrap chart-wrap-lg" style="max-width:520px;margin:0 auto"><canvas id="ch-radar"></canvas></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/statistiken.js"></script>{% endblock %}

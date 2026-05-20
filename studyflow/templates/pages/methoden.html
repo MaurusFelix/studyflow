@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Lernmethoden{% endblock %}
+{% block page_title %}Lernmethoden{% endblock %}
+{% block topbar_actions %}<button class="btn btn-p btn-sm" onclick="openModal('methode')">+ Eigene Methode</button>{% endblock %}
+{% block content %}
+<div class="grid-auto" id="methoden-grid"><div class="empty"><div class="empty-icon">⚡</div><h3>Lade...</h3></div></div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/methoden.js"></script>{% endblock %}
